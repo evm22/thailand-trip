@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E3B33">
+<title>תאילנד 2026 · 7–31 באוגוסט</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --jungle:#0E3B33;
+  --emerald:#14655A;
+  --emerald-soft:#E4F0ED;
+  --gold:#D4A03C;
+  --gold-soft:#F7EDD8;
+  --sand:#FAF7EF;
+  --ink:#1B2422;
+  --muted:#6B7A76;
+  --coral:#D9534A;
+  --coral-soft:#FBEAE8;
+  --card:#FFFFFF;
+  --radius:16px;
+  --shadow:0 2px 10px rgba(14,59,51,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Assistant',sans-serif;
+  background:var(--sand);
+  color:var(--ink);
+  min-height:100vh;
+  padding-bottom:84px;
+}
+h1,h2,h3,.display{font-family:'Secular One',sans-serif;font-weight:400}
+
+/* ---------- Header ---------- */
+header{
+  background:linear-gradient(160deg,var(--jungle) 0%,#134C41 70%,#175A4C 100%);
+  color:#fff;
+  padding:22px 18px 18px;
+  border-radius:0 0 24px 24px;
+}
+header .kicker{font-size:13px;letter-spacing:.12em;color:var(--gold);text-transform:uppercase}
+header h1{font-size:30px;margin:4px 0 2px}
+header .sub{font-size:15px;opacity:.85}
+.countdown{
+  margin-top:12px;display:inline-block;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(212,160,60,.5);
+  padding:6px 14px;border-radius:999px;font-size:14px;font-weight:600;
+}
+
+/* ---------- Day strip (signature) ---------- */
+.strip-wrap{padding:14px 0 4px}
+.strip-label{padding:0 18px;font-size:13px;color:var(--muted);margin-bottom:6px}
+.strip{
+  display:flex;gap:6px;overflow-x:auto;padding:2px 18px 10px;
+  scrollbar-width:none;
+}
+.strip::-webkit-scrollbar{display:none}
+.day{
+  flex:0 0 auto;width:52px;border-radius:12px;padding:7px 0 6px;
+  text-align:center;color:#fff;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;gap:1px;
+}
+.day .dnum{font-family:'Secular One';font-size:17px;line-height:1}
+.day .dcity{font-size:10px;opacity:.9}
+.day .dow{font-size:10px;opacity:.75}
+.day.today{outline:3px solid var(--gold);outline-offset:1px}
+.day.gap{background:repeating-linear-gradient(45deg,#B7862F,#B7862F 6px,#C79539 6px,#C79539 12px)!important}
+.day{cursor:pointer}
+
+/* ---------- Layout ---------- */
+main{padding:6px 16px 20px;max-width:640px;margin:0 auto}
+section.tab{display:none}
+section.tab.active{display:block;animation:fade .18s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+h2.sec{font-size:22px;margin:16px 2px 10px;color:var(--jungle)}
+
+.card{
+  background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:14px 16px;margin-bottom:12px;position:relative;
+}
+.card .tagline{font-size:12px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.card h3{font-size:18px;color:var(--jungle);margin:2px 0}
+.card .meta{font-size:14px;color:var(--muted)}
+.badge{
+  display:inline-block;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;
+}
+.badge.ok{background:var(--emerald-soft);color:var(--emerald)}
+.badge.warn{background:var(--coral-soft);color:var(--coral)}
+.badge.gold{background:var(--gold-soft);color:#9A7220}
+.cityline{width:5px;border-radius:99px;position:absolute;top:14px;bottom:14px;right:0}
+
+/* ---------- Day plan cards ---------- */
+.plantools{display:flex;gap:8px;margin-bottom:10px}
+.daycard summary{display:flex;align-items:center;gap:12px;cursor:pointer;list-style:none}
+.daycard summary::-webkit-details-marker{display:none}
+.daycard .dnum-badge{
+  width:38px;height:38px;border-radius:50%;flex:0 0 auto;color:#fff;
+  display:flex;align-items:center;justify-content:center;font-family:'Secular One';font-size:16px;
+}
+.daycard .dsum{flex:1;min-width:0}
+.daycard .dtitle{font-weight:700;font-size:15px;color:var(--jungle)}
+.daycard .dmeta{font-size:12.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.daycard .chevron{font-size:14px;color:var(--muted);flex:0 0 auto;transition:transform .15s}
+.daycard[open] .chevron{transform:rotate(180deg)}
+.daycard.today{outline:2px solid var(--gold);outline-offset:2px}
+.daycard.gapday .dnum-badge{background:repeating-linear-gradient(45deg,#B7862F,#B7862F 4px,#C79539 4px,#C79539 8px)}
+.dayplan-body{margin-top:12px;padding-top:12px;border-top:1px dashed #E2E9E7}
+.dayplan-field{margin-bottom:10px}
+.dayplan-field:last-child{margin-bottom:0}
+.dayplan-field label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:4px}
+.dayplan-field textarea{
+  font-family:inherit;font-size:15px;width:100%;min-height:42px;resize:vertical;
+  padding:8px 12px;border:1.5px solid #D8E2DF;border-radius:12px;background:#fff;color:var(--ink);
+}
+.dayplan-field textarea:focus{outline:2px solid var(--emerald);border-color:var(--emerald)}
+
+/* ---------- PIN gate ---------- */
+.pingate{position:fixed;inset:0;background:linear-gradient(160deg,var(--jungle) 0%,#134C41 70%,#175A4C 100%);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px}
+.pingate.hidden{display:none}
+.pingate-card{background:#fff;border-radius:var(--radius);padding:28px 24px;max-width:320px;width:100%;text-align:center;box-shadow:var(--shadow)}
+.pingate-title{font-family:'Secular One';font-size:22px;color:var(--jungle);margin-bottom:4px}
+.pingate-sub{font-size:14px;color:var(--muted);margin-bottom:16px}
+.pingate-card input{text-align:center;font-size:24px;letter-spacing:8px;margin-bottom:12px}
+.pingate-error{color:var(--coral);font-size:13px;margin-top:10px;min-height:16px}
+body.locked{overflow:hidden}
+
+/* ---------- Sync status ---------- */
+.syncbadge{margin-top:6px;font-size:12px;color:rgba(255,255,255,.75)}
+.syncbadge.ok{color:#8FE0C9}
+.syncbadge.warn{color:#F3B3AC}
+
+.alert{
+  background:var(--coral-soft);border:1px solid #F0C6C2;color:#8C332C;
+  border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;font-size:15px;
+}
+.alert b{display:block;margin-bottom:2px}
+
+/* ---------- Buttons & forms ---------- */
+button{font-family:inherit;cursor:pointer;border:none}
+.btn{
+  background:var(--emerald);color:#fff;font-weight:700;font-size:15px;
+  padding:11px 18px;border-radius:12px;width:100%;
+}
+.btn:active{transform:scale(.98)}
+.btn.ghost{background:transparent;color:var(--emerald);border:1.5px solid var(--emerald)}
+.btn.small{width:auto;padding:7px 14px;font-size:14px}
+input,select{
+  font-family:inherit;font-size:16px;width:100%;
+  padding:10px 12px;border:1.5px solid #D8E2DF;border-radius:12px;background:#fff;color:var(--ink);
+}
+input:focus,select:focus{outline:2px solid var(--emerald);border-color:var(--emerald)}
+label{font-size:13px;font-weight:700;color:var(--muted);display:block;margin:10px 2px 4px}
+.row{display:flex;gap:10px}
+.row>*{flex:1}
+
+/* ---------- Expenses ---------- */
+.totals{
+  display:flex;gap:10px;margin-bottom:12px;
+}
+.totalbox{
+  flex:1;background:var(--jungle);color:#fff;border-radius:var(--radius);
+  padding:12px 14px;text-align:center;
+}
+.totalbox.gold{background:var(--gold);color:#3A2B08}
+.totalbox .amt{font-family:'Secular One';font-size:22px}
+.totalbox .lbl{font-size:12px;opacity:.85}
+.exp-item{
+  display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;
+  padding:10px 12px;margin-bottom:8px;box-shadow:var(--shadow);
+}
+.exp-item .cat{font-size:22px}
+.exp-item .info{flex:1}
+.exp-item .info .t{font-weight:700}
+.exp-item .info .m{font-size:12px;color:var(--muted)}
+.exp-item .sum{font-weight:700;color:var(--jungle);white-space:nowrap}
+.del{background:none;color:#B9C4C1;font-size:18px;padding:4px}
+.catbar{margin:6px 0 2px}
+.catbar .cb-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:2px}
+.cb-track{height:8px;border-radius:99px;background:#E7EDEB;overflow:hidden}
+.cb-fill{height:100%;background:var(--emerald);border-radius:99px}
+
+/* ---------- Checklist ---------- */
+.chk{
+  display:flex;align-items:center;gap:12px;background:#fff;border-radius:12px;
+  padding:12px 14px;margin-bottom:8px;box-shadow:var(--shadow);
+}
+.chk input[type=checkbox]{width:22px;height:22px;accent-color:var(--emerald);flex:0 0 auto}
+.chk.done .txt{text-decoration:line-through;color:var(--muted)}
+.chk .txt{flex:1;font-size:15px}
+
+/* ---------- Flights ---------- */
+.flight-leg{display:flex;align-items:center;gap:12px;padding:8px 0}
+.flight-leg+.flight-leg{border-top:1px dashed #E2E9E7}
+.fl-time{font-family:'Secular One';font-size:17px;min-width:52px;color:var(--jungle)}
+.fl-route{flex:1}
+.fl-route .r{font-weight:700}
+.fl-route .s{font-size:13px;color:var(--muted)}
+
+/* ---------- Bottom nav ---------- */
+nav{
+  position:fixed;bottom:0;right:0;left:0;z-index:50;
+  background:#fff;border-top:1px solid #E5ECEA;
+  display:flex;justify-content:space-around;
+  padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+}
+nav button{
+  background:none;display:flex;flex-direction:column;align-items:center;gap:2px;
+  font-size:11px;font-weight:700;color:var(--muted);padding:4px 10px;border-radius:12px;
+}
+nav button .ic{font-size:21px}
+nav button.active{color:var(--emerald);background:var(--emerald-soft)}
+
+.footer-note{text-align:center;font-size:12px;color:var(--muted);margin-top:18px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="pingate" id="pinGate">
+  <div class="pingate-card">
+    <div class="pingate-title">תאילנד 2026 🔒</div>
+    <div class="pingate-sub">הזינו קוד גישה</div>
+    <input type="tel" id="pinInput" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••">
+    <button class="btn" onclick="checkPin()">כניסה</button>
+    <div class="pingate-error" id="pinError"></div>
+  </div>
+</div>
+
+<header>
+  <div class="kicker">Thailand · 4 נוסעים</div>
+  <h1>תאילנד 2026 🇹🇭</h1>
+  <div class="sub">7 עד 31 באוגוסט · 24 לילות · בנגקוק → צ'אנג מאי → צ'אנג ראי → קראבי → פוקט → בנגקוק</div>
+  <div class="countdown" id="countdown"></div>
+  <div class="syncbadge" id="syncStatus"></div>
+</header>
+
+<div class="strip-wrap">
+  <div class="strip-label">כל יום בטיול — לפי עיר</div>
+  <div class="strip" id="strip"></div>
+</div>
+
+<main>
+
+<!-- ============ ITINERARY ============ -->
+<section class="tab active" id="tab-plan">
+  <div id="gapAlerts"></div>
+  <h2 class="sec">מסלול הטיול</h2>
+  <div class="plantools">
+    <button class="btn ghost small" onclick="toggleAllDays(true)">פתיחת כל הימים</button>
+    <button class="btn ghost small" onclick="toggleAllDays(false)">סגירת הכל</button>
+  </div>
+  <div id="planList"></div>
+</section>
+
+<!-- ============ FLIGHTS ============ -->
+<section class="tab" id="tab-flights">
+  <h2 class="sec">טיסות ✈️</h2>
+  <div id="flightList"></div>
+
+  <div class="card">
+    <h3>הוספת טיסה פנימית</h3>
+    <label>תאריך</label>
+    <input type="date" id="f-date" min="2026-08-07" max="2026-08-31">
+    <div class="row">
+      <div><label>מ־</label><input id="f-from" placeholder="בנגקוק"></div>
+      <div><label>אל</label><input id="f-to" placeholder="צ'אנג מאי"></div>
+    </div>
+    <div class="row">
+      <div><label>שעה</label><input type="time" id="f-time"></div>
+      <div><label>חברה / מס' טיסה</label><input id="f-num" placeholder="TG104"></div>
+    </div>
+    <label>מס' הזמנה (לא חובה)</label>
+    <input id="f-ref" placeholder="ABC123">
+    <div style="margin-top:12px"><button class="btn" onclick="addFlight()">שמירת טיסה</button></div>
+  </div>
+</section>
+
+<!-- ============ HOTELS ============ -->
+<section class="tab" id="tab-hotels">
+  <h2 class="sec">מלונות 🏨</h2>
+  <div id="hotelList"></div>
+
+  <div class="card">
+    <h3>הוספת מלון</h3>
+    <label>שם המלון</label>
+    <input id="h-name" placeholder="שם המלון">
+    <label>עיר</label>
+    <select id="h-city">
+      <option>בנגקוק</option><option>צ'אנג מאי</option><option>צ'אנג ראי</option>
+      <option>קראבי</option><option>פוקט</option><option>אחר</option>
+    </select>
+    <div class="row">
+      <div><label>צ'ק-אין</label><input type="date" id="h-in" min="2026-08-07" max="2026-08-31"></div>
+      <div><label>צ'ק-אאוט</label><input type="date" id="h-out" min="2026-08-07" max="2026-08-31"></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn" onclick="addHotel()">שמירת מלון</button></div>
+  </div>
+</section>
+
+<!-- ============ MONEY ============ -->
+<section class="tab" id="tab-money">
+  <h2 class="sec">כספים 💰</h2>
+
+  <div class="totals">
+    <div class="totalbox"><div class="amt" id="totTHB">0 ฿</div><div class="lbl">סה"כ הוצאות בבאט</div></div>
+    <div class="totalbox gold"><div class="amt" id="totILS">0 ₪</div><div class="lbl">סה"כ בשקלים</div></div>
+  </div>
+  <div class="totals">
+    <div class="totalbox" style="background:var(--emerald)"><div class="amt" id="cashTHB">0 ฿</div><div class="lbl">💵 מזומן בארנק</div></div>
+    <div class="totalbox" style="background:#3E6B8C"><div class="amt" id="cardILS">0 ₪</div><div class="lbl">💳 הוצא באשראי</div></div>
+  </div>
+
+  <div class="card">
+    <h3>הוספת הוצאה</h3>
+    <label>תיאור</label>
+    <input id="e-desc" placeholder="ארוחת ערב, מונית...">
+    <div class="row">
+      <div><label>סכום</label><input type="number" id="e-amt" inputmode="decimal" placeholder="0"></div>
+      <div><label>מטבע</label>
+        <select id="e-cur"><option value="THB">฿ באט</option><option value="ILS">₪ שקל</option><option value="USD">$ דולר</option></select>
+      </div>
+    </div>
+    <div class="row">
+      <div><label>קטגוריה</label>
+        <select id="e-cat">
+          <option value="🍜">🍜 אוכל</option><option value="🚕">🚕 תחבורה</option>
+          <option value="🏨">🏨 לינה</option><option value="🎟️">🎟️ אטרקציות</option>
+          <option value="🛍️">🛍️ קניות</option><option value="✈️">✈️ טיסות</option><option value="📦">📦 אחר</option>
+        </select>
+      </div>
+      <div><label>תאריך</label><input type="date" id="e-date"></div>
+    </div>
+    <label>איך שילמתם?</label>
+    <select id="e-pay"><option value="cash">💵 מזומן</option><option value="card">💳 אשראי</option></select>
+    <div style="margin-top:12px"><button class="btn" onclick="addExp()">שמירת הוצאה</button></div>
+  </div>
+
+  <div class="card" style="border:1.5px solid var(--emerald)">
+    <h3>💵 משיכת מזומן (כספומט)</h3>
+    <div class="row">
+      <div><label>כמה באט משכתם</label><input type="number" id="w-amt" inputmode="decimal" placeholder="10000"></div>
+      <div><label>עמלה בבאט (לא חובה)</label><input type="number" id="w-fee" inputmode="decimal" placeholder="220"></div>
+    </div>
+    <label>תאריך</label>
+    <input type="date" id="w-date">
+    <div style="margin-top:12px"><button class="btn" onclick="addWd()">רישום משיכה</button></div>
+    <p class="meta" style="margin-top:8px;font-size:13px">💡 בכספומטים בתאילנד יש בד"כ עמלה של 220 ฿ למשיכה — העמלה תירשם אוטומטית כהוצאה.</p>
+  </div>
+
+  <h2 class="sec" style="font-size:18px" id="wdTitle">משיכות מזומן</h2>
+  <div id="wdList"></div>
+
+  <div class="card">
+    <h3>שערי המרה</h3>
+    <div class="row">
+      <div><label>1 ₪ = כמה באט</label><input type="number" id="rateTHB" step="0.01"></div>
+      <div><label>1 $ = כמה שקל</label><input type="number" id="rateUSD" step="0.01"></div>
+    </div>
+    <p class="meta" style="margin-top:8px;font-size:13px">אפשר לעדכן לפי השער בפועל — הכל יחושב מחדש.</p>
+  </div>
+
+  <h2 class="sec" style="font-size:18px">לפי קטגוריה</h2>
+  <div class="card catbar" id="catBars"></div>
+
+  <h2 class="sec" style="font-size:18px">כל ההוצאות</h2>
+  <div id="expList"></div>
+</section>
+
+<!-- ============ CHECKLIST ============ -->
+<section class="tab" id="tab-check">
+  <h2 class="sec">משימות וצ'קליסט ✅</h2>
+  <div id="chkList"></div>
+  <div class="card">
+    <div class="row">
+      <input id="c-new" placeholder="משימה חדשה...">
+      <button class="btn small" style="flex:0 0 auto" onclick="addChk()">הוספה</button>
+    </div>
+  </div>
+</section>
+
+<div class="footer-note">הנתונים נשמרים בדפדפן ומסתנכרנים בין המכשירים 📱☁️</div>
+</main>
+
+<nav>
+  <button class="active" data-tab="plan" onclick="go('plan',this)"><span class="ic">🗓️</span>מסלול</button>
+  <button data-tab="flights" onclick="go('flights',this)"><span class="ic">✈️</span>טיסות</button>
+  <button data-tab="hotels" onclick="go('hotels',this)"><span class="ic">🏨</span>מלונות</button>
+  <button data-tab="money" onclick="go('money',this)"><span class="ic">💰</span>כספים</button>
+  <button data-tab="check" onclick="go('check',this)"><span class="ic">✅</span>משימות</button>
+</nav>
+
+<script>
+/* ================= DATA ================= */
+const CITY_COLORS={
+  'בנגקוק':'#14655A',        // emerald
+  "צ'אנג מאי":'#8A5A2B',     // teak brown
+  "צ'אנג ראי":'#3E6B8C',     // river blue
+  'קראבי':'#1C8C82',         // lagoon
+  'פוקט':'#B0622F',          // sunset
+  'טיסה':'#0E3B33',
+  'אחר':'#6B7A76'
+};
+
+/* הנתונים האמיתיים (מלונות/טיסות/צ'קליסט) חיים ב-Firestore בלבד ולא בקובץ הציבורי הזה. */
+const DEFAULT_HOTELS=[];
+const DEFAULT_FLIGHTS=[];
+const DEFAULT_CHECKS=[];
+
+/* ================= STORAGE ================= */
+function load(key,def){try{const v=localStorage.getItem(key);return v?JSON.parse(v):def}catch(e){return def}}
+function persistLocal(key,val){try{localStorage.setItem(key,JSON.stringify(val))}catch(e){}}
+function save(key,val){persistLocal(key,val);pushToCloud()}
+
+let hotels=load('th_hotels_v2',DEFAULT_HOTELS);
+let flights=load('th_flights_v2',DEFAULT_FLIGHTS);
+let checks=load('th_checks_v2',DEFAULT_CHECKS);
+let exps=load('th_exps',[]);
+let wds=load('th_wds',[]);
+let rates=load('th_rates',{ILS_THB:9.5,USD_ILS:3.7});
+let dayPlans=load('th_dayplans',{});
+
+/* ================= CLOUD SYNC (jsonblob.com — ללא התחברות/חשבון) =================
+   כל שינוי נשמר גם ב-URL המשותף הזה, וכל מכשיר בודק אותו כל כמה שניות.
+   ההגנה היחידה היא זה שה-ID לא מנוחש + מסך ה-PIN — לא אבטחה אמיתית, מספיק לצורך הזה. */
+const SYNC_URL='https://jsonblob.com/api/jsonBlob/019facda-5624-7454-bf36-c6872509c4cf';
+const CLOUD_KEYS=['th_hotels_v2','th_flights_v2','th_checks_v2','th_exps','th_wds','th_rates','th_dayplans'];
+function getLocalVar(key){
+  return {th_hotels_v2:hotels,th_flights_v2:flights,th_checks_v2:checks,th_exps:exps,th_wds:wds,th_rates:rates,th_dayplans:dayPlans}[key];
+}
+function setLocalVar(key,val){
+  if(key==='th_hotels_v2')hotels=val;
+  else if(key==='th_flights_v2')flights=val;
+  else if(key==='th_checks_v2')checks=val;
+  else if(key==='th_exps')exps=val;
+  else if(key==='th_wds')wds=val;
+  else if(key==='th_rates')rates=val;
+  else if(key==='th_dayplans')dayPlans=val;
+}
+function buildCloudState(){
+  const o={};CLOUD_KEYS.forEach(k=>o[k]=getLocalVar(k));return o;
+}
+function setSyncStatus(txt,cls){
+  const el=document.getElementById('syncStatus');
+  if(el){el.textContent=txt;el.className='syncbadge '+(cls||'')}
+}
+let pendingRemoteRender=false;
+function safeRenderAll(){
+  const active=document.activeElement;
+  if(active&&active.closest&&active.closest('#planList')){pendingRemoteRender=true;return}
+  renderAll();
+}
+document.addEventListener('focusout',e=>{
+  if(pendingRemoteRender&&e.target.closest&&e.target.closest('#planList')){
+    pendingRemoteRender=false;
+    renderAll();
+  }
+});
+let lastSyncedJSON='';
+let pushTimer=null;
+function pushToCloud(){
+  if(!SYNC_URL)return;
+  clearTimeout(pushTimer);
+  pushTimer=setTimeout(()=>{
+    const json=JSON.stringify(buildCloudState());
+    fetch(SYNC_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:json})
+      .then(r=>{if(!r.ok)throw new Error('http '+r.status);lastSyncedJSON=json;setSyncStatus('☁️ מסונכרן','ok')})
+      .catch(()=>setSyncStatus('⚠️ לא ניתן לסנכרן כרגע','warn'));
+  },600);
+}
+let pollFails=0;
+function pollCloud(force){
+  if(!force&&document.visibilityState!=='visible')return;
+  fetch(SYNC_URL).then(r=>{if(!r.ok)throw new Error('http '+r.status);return r.json()}).then(data=>{
+    pollFails=0;
+    const json=JSON.stringify(data);
+    setSyncStatus('☁️ מסונכרן','ok');
+    if(json===lastSyncedJSON)return;
+    lastSyncedJSON=json;
+    let changed=false;
+    CLOUD_KEYS.forEach(k=>{
+      if(data[k]!==undefined){persistLocal(k,data[k]);setLocalVar(k,data[k]);changed=true}
+    });
+    if(changed)safeRenderAll();
+  }).catch(()=>{
+    pollFails++;
+    if(pollFails>=3)setSyncStatus('⚠️ לא מחובר לענן','warn');
+  });
+}
+if(SYNC_URL){
+  setSyncStatus('🔄 מתחבר…','');
+  pollCloud(true);
+  setInterval(()=>pollCloud(),10000);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollCloud()});
+}
+
+/* ================= HELPERS ================= */
+const HEB_DOW=['א','ב','ג','ד','ה','ו','ש'];
+function d(s){return new Date(s+'T00:00:00')}
+function fmt(s){const x=d(s);return x.getDate()+'.'+(x.getMonth()+1)}
+function nights(a,b){return Math.round((d(b)-d(a))/86400000)}
+function cityOn(dateStr){
+  for(const h of hotels){if(dateStr>=h.in&&dateStr<h.out)return h.city}
+  return null;
+}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function getDayPlan(ds){return dayPlans[ds]||{morning:'',noon:'',evening:''}}
+function saveDayPlanField(ds,field,val){
+  if(!dayPlans[ds])dayPlans[ds]={morning:'',noon:'',evening:''};
+  dayPlans[ds][field]=val;
+  save('th_dayplans',dayPlans);
+}
+
+/* ================= DAY STRIP ================= */
+function renderStrip(){
+  const el=document.getElementById('strip');el.innerHTML='';
+  const today=new Date().toISOString().slice(0,10);
+  for(let i=7;i<=31;i++){
+    const ds='2026-08-'+String(i).padStart(2,'0');
+    const city=cityOn(ds);
+    const dv=document.createElement('div');
+    dv.className='day'+(ds===today?' today':'')+(city?'':' gap');
+    dv.style.background=city?CITY_COLORS[city]||CITY_COLORS['אחר']:'';
+    dv.innerHTML='<span class="dow">'+HEB_DOW[d(ds).getDay()]+'</span><span class="dnum">'+i+'</span><span class="dcity">'+(city||(i===7?'טיסה ✈️':'חסר!'))+'</span>';
+    dv.onclick=()=>goToDay(i);
+    el.appendChild(dv);
+  }
+}
+
+/* ================= PLAN TAB ================= */
+function renderPlan(){
+  // gap alerts
+  const gaps=[];
+  for(let i=8;i<31;i++){
+    const ds='2026-08-'+String(i).padStart(2,'0');
+    if(!cityOn(ds))gaps.push(i);
+  }
+  const ga=document.getElementById('gapAlerts');
+  if(gaps.length){
+    // group consecutive
+    const groups=[];let start=gaps[0],prev=gaps[0];
+    for(let k=1;k<=gaps.length;k++){
+      if(gaps[k]!==prev+1){groups.push([start,prev]);start=gaps[k]}
+      prev=gaps[k];
+    }
+    ga.innerHTML='<div class="alert"><b>⚠️ לילות בלי מלון:</b>'+groups.map(g=>g[0]===g[1]?'ליל ה-'+g[0]+'.8':'לילות '+g[0]+'–'+g[1]+'.8').join(' · ')+' — כדאי להזמין!</div>';
+  }else{ga.innerHTML=''}
+
+  // one accordion card per day, with manual morning/noon/evening plan fields
+  const el=document.getElementById('planList');el.innerHTML='';
+  const todayStr=new Date().toISOString().slice(0,10);
+  for(let i=7;i<=31;i++){
+    const ds='2026-08-'+String(i).padStart(2,'0');
+    const city=cityOn(ds);
+    const checkIn=hotels.find(h=>h.in===ds);
+    const checkOut=hotels.find(h=>h.out===ds);
+    const flightsToday=flights.filter(f=>f.date===ds).sort((a,b)=>(a.time||'')<(b.time||'')?-1:1);
+    const dp=getDayPlan(ds);
+    const isToday=ds===todayStr;
+    const color=city?(CITY_COLORS[city]||CITY_COLORS['אחר']):CITY_COLORS['טיסה'];
+
+    const metaParts=[];
+    flightsToday.forEach(f=>metaParts.push('✈️ '+f.from+' ← '+f.to+(f.time?' · '+f.time:'')));
+    if(checkIn)metaParts.push('🏨 צ\'ק-אין: '+checkIn.name);
+    if(checkOut&&!checkIn)metaParts.push('🏨 צ\'ק-אאוט: '+checkOut.name);
+    if(!city&&!flightsToday.length)metaParts.push('⚠️ אין לינה מוזמנת');
+
+    const hasPlan=dp.morning||dp.noon||dp.evening;
+
+    const dtl=document.createElement('details');
+    dtl.className='card daycard'+(isToday?' today':'')+(!city?' gapday':'');
+    dtl.id='day-'+ds;
+    if(isToday||hasPlan)dtl.open=true;
+    dtl.innerHTML=
+      '<summary>'
+        +'<div class="dnum-badge" style="background:'+color+'">'+i+'</div>'
+        +'<div class="dsum"><div class="dtitle">יום '+HEB_DOW[d(ds).getDay()]+'׳ · '+fmt(ds)+(city?' · '+city:'')+'</div>'
+        +'<div class="dmeta">'+(metaParts.join(' · ')||'—')+'</div></div>'
+        +'<span class="chevron">⌄</span>'
+      +'</summary>'
+      +'<div class="dayplan-body">'
+        +'<div class="dayplan-field"><label>☀️ בוקר</label><textarea placeholder="מה בתוכנית לבוקר..." oninput="saveDayPlanField(\''+ds+'\',\'morning\',this.value)">'+esc(dp.morning)+'</textarea></div>'
+        +'<div class="dayplan-field"><label>🌤️ צהריים</label><textarea placeholder="מה בתוכנית לצהריים..." oninput="saveDayPlanField(\''+ds+'\',\'noon\',this.value)">'+esc(dp.noon)+'</textarea></div>'
+        +'<div class="dayplan-field"><label>🌙 ערב</label><textarea placeholder="מה בתוכנית לערב..." oninput="saveDayPlanField(\''+ds+'\',\'evening\',this.value)">'+esc(dp.evening)+'</textarea></div>'
+      +'</div>';
+    el.appendChild(dtl);
+  }
+}
+function toggleAllDays(open){document.querySelectorAll('#planList details').forEach(dt=>dt.open=open)}
+function goToDay(i){
+  const ds='2026-08-'+String(i).padStart(2,'0');
+  go('plan',document.querySelector('nav button[data-tab="plan"]'));
+  const dayEl=document.getElementById('day-'+ds);
+  if(dayEl){dayEl.open=true;dayEl.scrollIntoView({behavior:'smooth',block:'start'});}
+}
+
+/* ================= FLIGHTS TAB ================= */
+function renderFlights(){
+  const el=document.getElementById('flightList');el.innerHTML='';
+  const sorted=[...flights].sort((a,b)=>(a.date+a.time)<(b.date+b.time)?-1:1);
+  sorted.forEach(f=>{
+    const c=document.createElement('div');c.className='card';
+    c.innerHTML='<div class="tagline">'+HEB_DOW[d(f.date).getDay()]+'׳ '+fmt(f.date)+'</div>'
+      +'<div class="flight-leg"><div class="fl-time">'+(f.time||'—')+'</div>'
+      +'<div class="fl-route"><div class="r">'+f.from+' ← '+f.to+'</div><div class="s">'+f.num+(f.ref?' · '+f.ref:'')+'</div></div>'
+      +(f.fixed?'<span class="badge ok">✓</span>':(f.todo?'<span class="badge warn">להזמין</span>':'')+'<button class="del" onclick="delFlight('+f.id+')">✕</button>')
+      +'</div>';
+    el.appendChild(c);
+  });
+}
+function addFlight(){
+  const date=document.getElementById('f-date').value;
+  const from=document.getElementById('f-from').value.trim();
+  const to=document.getElementById('f-to').value.trim();
+  if(!date||!from||!to){alert('צריך למלא תאריך, מוצא ויעד');return}
+  // replace a matching todo placeholder if exists
+  const idx=flights.findIndex(f=>f.todo&&f.date===date);
+  const nf={id:Date.now(),date,time:document.getElementById('f-time').value,from,to,
+    num:document.getElementById('f-num').value.trim()||'טיסה פנימית',
+    ref:document.getElementById('f-ref').value.trim()};
+  if(idx>-1)flights[idx]=nf;else flights.push(nf);
+  save('th_flights_v2',flights);
+  ['f-from','f-to','f-num','f-ref'].forEach(i=>document.getElementById(i).value='');
+  renderAll();
+}
+function delFlight(id){flights=flights.filter(f=>f.id!==id);save('th_flights_v2',flights);renderAll()}
+
+/* ================= HOTELS TAB ================= */
+function renderHotels(){
+  const el=document.getElementById('hotelList');el.innerHTML='';
+  const sorted=[...hotels].sort((a,b)=>a.in<b.in?-1:1);
+  sorted.forEach(h=>{
+    const c=document.createElement('div');c.className='card';
+    c.innerHTML='<div class="cityline" style="background:'+(CITY_COLORS[h.city]||CITY_COLORS['אחר'])+'"></div>'
+      +'<div class="tagline">'+h.city+' · '+nights(h.in,h.out)+' לילות</div>'
+      +'<h3>'+h.name+'</h3>'
+      +'<div class="meta">'+fmt(h.in)+' – '+fmt(h.out)+(h.note?' · '+h.note:'')+'</div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">'
+      +'<span class="badge ok">מאושר ✓</span>'
+      +'<button class="del" onclick="delHotel('+h.id+')">✕</button></div>';
+    el.appendChild(c);
+  });
+}
+function addHotel(){
+  const name=document.getElementById('h-name').value.trim();
+  const inD=document.getElementById('h-in').value,outD=document.getElementById('h-out').value;
+  if(!name||!inD||!outD||outD<=inD){alert('צריך שם ותאריכים תקינים (צ׳ק-אאוט אחרי צ׳ק-אין)');return}
+  hotels.push({id:Date.now(),name,city:document.getElementById('h-city').value,in:inD,out:outD,note:''});
+  save('th_hotels_v2',hotels);
+  document.getElementById('h-name').value='';
+  renderAll();
+}
+function delHotel(id){if(confirm('למחוק את המלון?')){hotels=hotels.filter(h=>h.id!==id);save('th_hotels_v2',hotels);renderAll()}}
+
+/* ================= MONEY TAB ================= */
+function toILS(e){
+  if(e.cur==='ILS')return e.amt;
+  if(e.cur==='THB')return e.amt/rates.ILS_THB;
+  if(e.cur==='USD')return e.amt*rates.USD_ILS;
+  return e.amt;
+}
+function toTHB(e){
+  if(e.cur==='THB')return e.amt;
+  return toILS(e)*rates.ILS_THB;
+}
+function renderMoney(){
+  document.getElementById('rateTHB').value=rates.ILS_THB;
+  document.getElementById('rateUSD').value=rates.USD_ILS;
+  let ils=0,cardIls=0,cashTHBspent=0;
+  exps.forEach(e=>{
+    const v=toILS(e);ils+=v;
+    if(e.pay==='card')cardIls+=v;else cashTHBspent+=toTHB(e);
+  });
+  const thb=ils*rates.ILS_THB;
+  const withdrawn=wds.reduce((s,w)=>s+w.amt,0);
+  const cashLeft=withdrawn-cashTHBspent;
+  document.getElementById('totILS').textContent=Math.round(ils).toLocaleString()+' ₪';
+  document.getElementById('totTHB').textContent=Math.round(thb).toLocaleString()+' ฿';
+  document.getElementById('cashTHB').textContent=Math.round(cashLeft).toLocaleString()+' ฿';
+  document.getElementById('cardILS').textContent=Math.round(cardIls).toLocaleString()+' ₪';
+  const cashBox=document.getElementById('cashTHB').parentElement;
+  cashBox.style.background=cashLeft<0?'var(--coral)':'var(--emerald)';
+
+  // withdrawals list
+  const wl=document.getElementById('wdList');wl.innerHTML='';
+  document.getElementById('wdTitle').style.display=wds.length?'block':'none';
+  [...wds].sort((a,b)=>a.date<b.date?1:-1).forEach(w=>{
+    const it=document.createElement('div');it.className='exp-item';
+    it.innerHTML='<span class="cat">🏧</span>'
+      +'<div class="info"><div class="t">משיכת מזומן</div><div class="m">'+fmt(w.date)+(w.fee?' · עמלה '+w.fee+' ฿':'')+'</div></div>'
+      +'<span class="sum" style="color:var(--emerald)">+'+w.amt.toLocaleString()+' ฿</span>'
+      +'<button class="del" onclick="delWd('+w.id+')">✕</button>';
+    wl.appendChild(it);
+  });
+
+  // category bars
+  const byCat={};exps.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+toILS(e)});
+  const cb=document.getElementById('catBars');
+  const max=Math.max(1,...Object.values(byCat));
+  cb.innerHTML=Object.keys(byCat).length?'':'<div class="meta">עוד אין הוצאות — מתחילים לתעד בטיול 🙂</div>';
+  Object.entries(byCat).sort((a,b)=>b[1]-a[1]).forEach(([cat,v])=>{
+    cb.innerHTML+='<div class="cb-row"><span>'+cat+'</span><b>'+Math.round(v).toLocaleString()+' ₪</b></div>'
+      +'<div class="cb-track"><div class="cb-fill" style="width:'+(v/max*100)+'%"></div></div><div style="height:8px"></div>';
+  });
+
+  const el=document.getElementById('expList');el.innerHTML='';
+  [...exps].sort((a,b)=>a.date<b.date?1:-1).forEach(e=>{
+    const it=document.createElement('div');it.className='exp-item';
+    const sym=e.cur==='THB'?'฿':e.cur==='USD'?'$':'₪';
+    it.innerHTML='<span class="cat">'+e.cat+'</span>'
+      +'<div class="info"><div class="t">'+e.desc+'</div><div class="m">'+fmt(e.date)+' · '+(e.pay==='card'?'💳 אשראי':'💵 מזומן')+' · ≈ '+Math.round(toILS(e)).toLocaleString()+' ₪</div></div>'
+      +'<span class="sum">'+e.amt.toLocaleString()+' '+sym+'</span>'
+      +'<button class="del" onclick="delExp('+e.id+')">✕</button>';
+    el.appendChild(it);
+  });
+}
+function addExp(){
+  const desc=document.getElementById('e-desc').value.trim();
+  const amt=parseFloat(document.getElementById('e-amt').value);
+  if(!desc||!amt||amt<=0){alert('צריך תיאור וסכום');return}
+  exps.push({id:Date.now(),desc,amt,cur:document.getElementById('e-cur').value,
+    cat:document.getElementById('e-cat').value,
+    pay:document.getElementById('e-pay').value,
+    date:document.getElementById('e-date').value||new Date().toISOString().slice(0,10)});
+  save('th_exps',exps);
+  document.getElementById('e-desc').value='';document.getElementById('e-amt').value='';
+  renderMoney();
+}
+function addWd(){
+  const amt=parseFloat(document.getElementById('w-amt').value);
+  if(!amt||amt<=0){alert('צריך למלא כמה באט משכתם');return}
+  const fee=parseFloat(document.getElementById('w-fee').value)||0;
+  const date=document.getElementById('w-date').value||new Date().toISOString().slice(0,10);
+  wds.push({id:Date.now(),amt,fee,date});
+  save('th_wds',wds);
+  if(fee>0){
+    exps.push({id:Date.now()+1,desc:'עמלת משיכה מכספומט',amt:fee,cur:'THB',cat:'📦',pay:'card',date});
+    save('th_exps',exps);
+  }
+  document.getElementById('w-amt').value='';document.getElementById('w-fee').value='';
+  renderMoney();
+}
+function delWd(id){wds=wds.filter(w=>w.id!==id);save('th_wds',wds);renderMoney()}
+function delExp(id){exps=exps.filter(e=>e.id!==id);save('th_exps',exps);renderMoney()}
+document.getElementById('rateTHB').addEventListener('change',ev=>{rates.ILS_THB=parseFloat(ev.target.value)||9.5;save('th_rates',rates);renderMoney()});
+document.getElementById('rateUSD').addEventListener('change',ev=>{rates.USD_ILS=parseFloat(ev.target.value)||3.7;save('th_rates',rates);renderMoney()});
+
+/* ================= CHECKLIST TAB ================= */
+function renderChecks(){
+  const el=document.getElementById('chkList');el.innerHTML='';
+  checks.forEach(c=>{
+    const dv=document.createElement('div');dv.className='chk'+(c.done?' done':'');
+    dv.innerHTML='<input type="checkbox" '+(c.done?'checked':'')+' onchange="togChk('+c.id+')">'
+      +'<span class="txt">'+c.txt+'</span>'
+      +'<button class="del" onclick="delChk('+c.id+')">✕</button>';
+    el.appendChild(dv);
+  });
+}
+function togChk(id){const c=checks.find(x=>x.id===id);if(c){c.done=!c.done;save('th_checks_v2',checks);renderChecks()}}
+function addChk(){
+  const t=document.getElementById('c-new').value.trim();
+  if(!t)return;
+  checks.push({id:Date.now(),txt:t,done:false});
+  save('th_checks_v2',checks);
+  document.getElementById('c-new').value='';
+  renderChecks();
+}
+function delChk(id){checks=checks.filter(c=>c.id!==id);save('th_checks_v2',checks);renderChecks()}
+
+/* ================= NAV & COUNTDOWN ================= */
+function go(tab,btn){
+  document.querySelectorAll('section.tab').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  window.scrollTo({top:0});
+}
+function renderCountdown(){
+  const dep=new Date('2026-08-07T19:45:00');
+  const ret=new Date('2026-08-31T23:59:00');
+  const now=new Date();
+  const el=document.getElementById('countdown');
+  if(now<dep){
+    const days=Math.ceil((dep-now)/86400000);
+    el.textContent='✈️ עוד '+days+' ימים להמראה!';
+  }else if(now<=ret){
+    const dayNum=Math.floor((now-new Date('2026-08-07T00:00:00'))/86400000)+1;
+    el.textContent='🌴 יום '+dayNum+' בטיול — תהנו!';
+  }else{
+    el.textContent='🏠 הטיול הסתיים — היה כיף!';
+  }
+}
+
+function renderAll(){renderStrip();renderPlan();renderFlights();renderHotels();renderMoney();renderChecks();renderCountdown()}
+renderAll();
+
+/* ================= PIN GATE ================= */
+const APP_PIN='1971'; // שנו כאן לקוד בן 4 ספרות שתזכרו שניכם
+function checkPin(){
+  const val=document.getElementById('pinInput').value.trim();
+  if(val===APP_PIN){
+    localStorage.setItem('th_unlocked','1');
+    document.getElementById('pinGate').classList.add('hidden');
+    document.body.classList.remove('locked');
+  }else{
+    document.getElementById('pinError').textContent='קוד שגוי, נסו שוב';
+    document.getElementById('pinInput').value='';
+  }
+}
+document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPin()});
+if(localStorage.getItem('th_unlocked')==='1'){
+  document.getElementById('pinGate').classList.add('hidden');
+}else{
+  document.body.classList.add('locked');
+}
+</script>
+</body>
+</html>
