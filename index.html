@@ -438,12 +438,24 @@ let rates=load('th_rates',{ILS_THB:9.5,USD_ILS:3.7});
 let dayPlans=load('th_dayplans',{});
 
 /* ================= CLOUD SYNC (גיבוי כפול — שני שירותים בלתי תלויים) =================
-   כל שינוי נשמר בשני עותקים בענן; אם שירות אחד נופל או נמחק, השני ממשיך לעבוד.
+   כל שינוי נשמר בשני עותקים בענן; אם שירות אחד נופל או נמחק, השני ממשיך לעבוד
+   והאפליקציה מתקנת אותו אוטומטית מהעותק התקין.
    ההגנה היחידה היא זה שה-ID לא מנוחש + מסך ה-PIN — לא אבטחה אמיתית, מספיק לצורך הזה. */
-const SYNC_URLS=[
-  'https://jsonblob.com/api/jsonBlob/019fbcf7-5bad-79f8-8e7c-a4db1a794a5c',
-  'https://extendsclass.com/api/json-storage/bin/baaeaeb'
+const SYNC_BACKENDS=[
+  {url:'https://api.npoint.io/d51477288f3c722bd2f9',method:'POST'},
+  {url:'https://extendsclass.com/api/json-storage/bin/baaeaeb',method:'PUT'}
 ];
+/* מאגר "תאים" לאחסון קבצים בענן — כל קובץ תופס תא אחד (עד ~3MB לקובץ).
+   תא פנוי = כזה שאף קובץ לא רשום עליו במטא-דאטה של המלונות/הטיסות. */
+const FILE_POOL=[
+  'ea11d3c6b8682b41a7c9','ae4f27e2a79fbb2c1a05','1a13c6c4ae0ba756372f','0f5a11a7d8e1f9c92a67',
+  '2fe9d6d14ff2aace3861','b074cdf2d149e984a255','8c8f1e3f355c4760010c','9ccf3205e5a40527daba',
+  '9db0cdd0255383a3f857','d2e118647fd7e9f0d610','5b77ea22628b3bbc49c2','790e7d3f3b2adc58bca6',
+  'cf27d8291877c421a15e','ab4a74158fb49f01fd6f','a6bd42050db697c7404b','0846701e5397513b2edf',
+  'cc27d4cd76a32593e982','ae058c4280c53a3cf20d','f5e507a25783bc54b832','f643f7dc4b9878877673',
+  '23cb8767e87ff5701904','37ce824e616764f771c5','37f058d81116d9fd3b40','970713c5856720a8c843',
+  '8778ac42f73f2febd951'
+].map(id=>'https://api.npoint.io/'+id);
 const CLOUD_KEYS=['th_hotels_v2','th_flights_v2','th_checks_v2','th_exps','th_wds','th_rates','th_dayplans'];
 function getLocalVar(key){
   return {th_hotels_v2:hotels,th_flights_v2:flights,th_checks_v2:checks,th_exps:exps,th_wds:wds,th_rates:rates,th_dayplans:dayPlans}[key];
@@ -492,8 +504,8 @@ function pushToCloud(){
   clearTimeout(pushTimer);
   pushTimer=setTimeout(()=>{
     const json=JSON.stringify(buildCloudState());
-    Promise.allSettled(SYNC_URLS.map(u=>
-      fetch(u,{method:'PUT',headers:{'Content-Type':'application/json'},body:json})
+    Promise.allSettled(SYNC_BACKENDS.map(b=>
+      fetch(b.url,{method:b.method,headers:{'Content-Type':'application/json'},body:json})
         .then(r=>{if(!r.ok)throw new Error('http '+r.status)})
     )).then(rs=>{
       if(rs.some(r=>r.status==='fulfilled')){lastSyncedJSON=json;setSyncOk()}
@@ -514,25 +526,37 @@ function applyCloud(data){
       needPush=true;
     }
   });
-  if(changed)safeRenderAll();
+  if(changed){safeRenderAll();setTimeout(cacheCloudFiles,1500)}
   if(needPush)pushToCloud();
 }
 let pollFails=0;
-function fetchCloud(i){
-  return fetch(SYNC_URLS[i]).then(r=>{if(!r.ok)throw new Error('http '+r.status);return r.json()});
-}
 function pollCloud(force){
   if(!force&&document.visibilityState!=='visible')return;
-  fetchCloud(0).catch(()=>fetchCloud(1)).then(data=>{
+  Promise.allSettled(SYNC_BACKENDS.map(b=>
+    fetch(b.url).then(r=>{if(!r.ok)throw new Error('http '+r.status);return r.json()})
+  )).then(rs=>{
+    const datas=rs.map(r=>r.status==='fulfilled'?r.value:null);
+    if(datas.every(d=>!d)){
+      pollFails++;
+      if(pollFails>=3)setSyncStatus('⚠️ לא מחובר לענן — בדקו חיבור אינטרנט','warn');
+      return;
+    }
     pollFails=0;
     setSyncOk();
-    const json=JSON.stringify(data);
-    if(json===lastSyncedJSON)return;
-    lastSyncedJSON=json;
-    applyCloud(data);
-  }).catch(()=>{
-    pollFails++;
-    if(pollFails>=3)setSyncStatus('⚠️ לא מחובר לענן — בדקו חיבור אינטרנט','warn');
+    /* ממזגים: לכל מפתח לוקחים את הערך הלא-ריק הראשון לפי סדר העדיפות */
+    const merged={};
+    CLOUD_KEYS.forEach(k=>{
+      for(const d of datas){if(d&&d[k]!==undefined&&!isEmptyVal(d[k])){merged[k]=d[k];return}}
+      for(const d of datas){if(d&&d[k]!==undefined){merged[k]=d[k];return}}
+    });
+    const json=JSON.stringify(merged);
+    /* אם אחד העננים נפל, ריק או שונה — דוחפים אליו את המצב המלא (ריפוי עצמי) */
+    const outOfSync=datas.some(d=>!d||JSON.stringify(d)!==json);
+    if(json!==lastSyncedJSON){
+      lastSyncedJSON=json;
+      applyCloud(merged);
+    }
+    if(outOfSync)pushToCloud();
   });
 }
 setSyncStatus('🔄 מתחבר…','');
@@ -816,8 +840,9 @@ function addChk(){
 function delChk(id){checks=checks.filter(c=>c.id!==id);save('th_checks_v2',checks);renderChecks()}
 
 /* ================= ATTACHMENTS (מסמכים: קבצים + קישורים) =================
-   קבצים נשמרים ב-IndexedDB במכשיר שבו הועלו (גדולים מדי לענן);
-   קישורים נשמרים על המלון/הטיסה עצמם ומסתנכרנים לכל המכשירים. */
+   קבצים עולים לענן (תא npoint לכל קובץ, עד ~3MB) ומסתנכרנים לכל המכשירים.
+   כל מכשיר גם שומר עותק מקומי ב-IndexedDB (מטמון) — פתיחה מהירה וגיבוי.
+   קישורים נשמרים על המלון/הטיסה עצמם ומסתנכרנים דרך הענן הרגיל. */
 let filesDB=null;
 const filesDBReady=new Promise(res=>{
   try{
@@ -861,31 +886,198 @@ function saveItemArr(itemKey){
   if(itemKey.startsWith('hotel'))save('th_hotels_v2',hotels);
   else save('th_flights_v2',flights);
 }
+function fileToB64(f){return new Promise((res,rej)=>{
+  const r=new FileReader();
+  r.onload=()=>res(String(r.result).split(',')[1]||'');
+  r.onerror=()=>rej(new Error('read failed'));
+  r.readAsDataURL(f);
+})}
+function b64ToBlob(b64,type){
+  const bin=atob(b64);
+  const u=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);
+  return new Blob([u],{type:type||'application/octet-stream'});
+}
+/* תמונות גדולות מוקטנות אוטומטית כדי להיכנס לתא בענן */
+function compressImage(f){return new Promise(res=>{
+  if(!f.type||!f.type.startsWith('image/')||f.size<800*1024)return res(f);
+  const img=new Image();
+  img.onload=()=>{
+    let w=img.naturalWidth,h=img.naturalHeight;
+    const M=1600;
+    if(w>M||h>M){const s=M/Math.max(w,h);w=Math.round(w*s);h=Math.round(h*s)}
+    const c=document.createElement('canvas');c.width=w;c.height=h;
+    c.getContext('2d').drawImage(img,0,0,w,h);
+    c.toBlob(b=>{
+      URL.revokeObjectURL(img.src);
+      if(b&&b.size<f.size)res(new File([b],f.name.replace(/\.\w+$/,'')+'.jpg',{type:'image/jpeg'}));
+      else res(f);
+    },'image/jpeg',0.8);
+  };
+  img.onerror=()=>{URL.revokeObjectURL(img.src);res(f)};
+  img.src=URL.createObjectURL(f);
+})}
+function usedBins(){
+  const s=new Set();
+  [...hotels,...flights].forEach(it=>(it.files||[]).forEach(f=>f.bin&&s.add(f.bin)));
+  return s;
+}
+function freeBin(){
+  const u=usedBins();
+  const free=FILE_POOL.filter(b=>!u.has(b));
+  return free.length?free[Math.floor(Math.random()*free.length)]:null;
+}
 let attTarget=null;
 function attAddFile(itemKey){attTarget=itemKey;document.getElementById('attFileInput').click()}
 document.getElementById('attFileInput').addEventListener('change',async e=>{
-  const f=e.target.files[0];
+  let f=e.target.files[0];
   e.target.value='';
   if(!f||!attTarget)return;
-  if(f.size>15*1024*1024){alert('הקובץ גדול מדי (עד 15MB)');return}
+  const itemKey=attTarget;
+  const det=document.getElementById('att-'+itemKey);
+  const listEl=det?det.querySelector('.attlist'):null;
+  if(listEl)listEl.innerHTML='<div class="att-note">⏳ מעלה לענן…</div>'+listEl.innerHTML;
   await filesDBReady;
-  const ok=await idbPut({fid:attTarget+'_'+Date.now(),itemKey:attTarget,name:f.name,type:f.type,blob:f,added:Date.now()});
-  if(!ok)alert('לא הצלחנו לשמור את הקובץ במכשיר הזה');
-  renderAttachments(attTarget);
+  try{
+    f=await compressImage(f);
+    if(f.size>3*1024*1024){
+      alert('הקובץ גדול מדי לענן (עד 3MB). אפשר להוסיף אותו כקישור מ-Google Drive במקום.');
+      renderAttachments(itemKey);return;
+    }
+    const it=findItem(itemKey);
+    const bin=freeBin();
+    if(!it||!bin){
+      if(!bin)alert('מאגר הקבצים בענן מלא — הקובץ יישמר במכשיר הזה בלבד');
+      await idbPut({fid:itemKey+'_'+Date.now(),itemKey,name:f.name,type:f.type,blob:f,added:Date.now()});
+      renderAttachments(itemKey);return;
+    }
+    const b64=await fileToB64(f);
+    const r=await fetch(bin,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:f.name,type:f.type||'application/octet-stream',data:b64})});
+    if(!r.ok)throw new Error('http '+r.status);
+    const entry={id:Date.now(),name:f.name,type:f.type||'',size:f.size,bin};
+    if(!it.files)it.files=[];
+    it.files.push(entry);
+    await idbPut({fid:'c_'+entry.id,itemKey,name:f.name,type:entry.type,blob:f,added:Date.now()});
+    saveItemArr(itemKey);
+  }catch(err){
+    alert('ההעלאה לענן נכשלה — הקובץ נשמר במכשיר הזה בלבד, ננסה להעלות שוב בפתיחה הבאה');
+    await idbPut({fid:itemKey+'_'+Date.now(),itemKey,name:f.name,type:f.type,blob:f,added:Date.now()});
+  }
+  renderAttachments(itemKey);
 });
+function openBlob(blob){
+  const u=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=u;a.target='_blank';a.rel='noopener';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),120000);
+}
+/* פתיחת קובץ ענן: קודם מהמטמון המקומי, אחרת מורידים מהענן ושומרים במטמון */
+async function attOpenCloud(itemKey,fileId){
+  await filesDBReady;
+  const it=findItem(itemKey);
+  const entry=it?(it.files||[]).find(x=>x.id===fileId):null;
+  if(!entry)return;
+  const cached=await idbGet('c_'+fileId);
+  if(cached&&cached.blob){openBlob(cached.blob);return}
+  const w=window.open('','_blank');
+  if(w){try{w.document.write('<p style="font-family:sans-serif;text-align:center;margin-top:40px">⏳ מוריד את הקובץ מהענן…</p>')}catch(e){}}
+  try{
+    const r=await fetch(entry.bin);
+    if(!r.ok)throw new Error('http '+r.status);
+    const j=await r.json();
+    if(!j||!j.data)throw new Error('empty');
+    const blob=b64ToBlob(j.data,j.type||entry.type);
+    await idbPut({fid:'c_'+fileId,itemKey,name:entry.name,type:entry.type,blob,added:Date.now()});
+    const u=URL.createObjectURL(blob);
+    if(w)w.location=u;else openBlob(blob);
+    setTimeout(()=>URL.revokeObjectURL(u),120000);
+  }catch(err){
+    if(w){try{w.close()}catch(e){}}
+    alert('לא הצלחנו להוריד את הקובץ מהענן — בדקו אינטרנט ונסו שוב');
+  }
+}
+async function attDelCloud(itemKey,fileId){
+  if(!confirm('למחוק את הקובץ מכל המכשירים?'))return;
+  const it=findItem(itemKey);
+  if(!it)return;
+  const entry=(it.files||[]).find(x=>x.id===fileId);
+  it.files=(it.files||[]).filter(x=>x.id!==fileId);
+  saveItemArr(itemKey);
+  await idbDel('c_'+fileId);
+  if(entry&&entry.bin){fetch(entry.bin,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).catch(()=>{})}
+  renderAttachments(itemKey);
+}
+/* קבצים ישנים ששמורים רק במכשיר (מגרסה קודמת) */
 async function attOpen(fid){
   const rec=await idbGet(fid);
   if(!rec){alert('הקובץ שמור במכשיר אחר — פתחו אותו שם, או הוסיפו קישור במקום');return}
-  const url=URL.createObjectURL(rec.blob);
-  const a=document.createElement('a');
-  a.href=url;a.target='_blank';a.rel='noopener';
-  document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  openBlob(rec.blob);
 }
 async function attDelFile(fid,itemKey){
   if(!confirm('למחוק את הקובץ?'))return;
   await idbDel(fid);
   renderAttachments(itemKey);
+}
+/* העברה אוטומטית לענן של קבצים שהועלו בגרסה הקודמת ונשמרו רק במכשיר */
+let migrateRan=false;
+async function migrateLocalFiles(){
+  if(migrateRan)return;
+  migrateRan=true;
+  await filesDBReady;
+  const all=await idbAll();
+  let moved=0;
+  for(const rec of all){
+    if(rec.fid.indexOf('c_')===0)continue;
+    const it=findItem(rec.itemKey);
+    if(!it)continue;
+    const full=await idbGet(rec.fid);
+    if(!full||!full.blob)continue;
+    if(full.blob.size>3*1024*1024)continue;
+    const bin=freeBin();
+    if(!bin)break;
+    try{
+      const b64=await fileToB64(full.blob);
+      const r=await fetch(bin,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name:rec.name,type:full.type||'application/octet-stream',data:b64})});
+      if(!r.ok)continue;
+      const entry={id:Date.now()+moved,name:rec.name,type:full.type||'',size:full.blob.size,bin};
+      if(!it.files)it.files=[];
+      it.files.push(entry);
+      await idbPut({fid:'c_'+entry.id,itemKey:rec.itemKey,name:rec.name,type:entry.type,blob:full.blob,added:Date.now()});
+      await idbDel(rec.fid);
+      saveItemArr(rec.itemKey);
+      moved++;
+    }catch(err){}
+  }
+  if(moved)renderAttachments();
+}
+/* הורדה אוטומטית למטמון של קבצים חדשים מהענן — כך כל מכשיר מחזיק עותק */
+let cachingRun=false;
+async function cacheCloudFiles(){
+  if(cachingRun)return;
+  cachingRun=true;
+  let got=0;
+  try{
+    await filesDBReady;
+    if(!filesDB)return;
+    const items=[...hotels.map(h=>({key:'hotel_'+h.id,it:h})),...flights.map(f=>({key:'flight_'+f.id,it:f}))];
+    for(const {key,it} of items){
+      for(const e of (it.files||[])){
+        if(await idbGet('c_'+e.id))continue;
+        try{
+          const r=await fetch(e.bin);
+          if(!r.ok)continue;
+          const j=await r.json();
+          if(!j||!j.data)continue;
+          await idbPut({fid:'c_'+e.id,itemKey:key,name:e.name,type:e.type,blob:b64ToBlob(j.data,j.type||e.type),added:Date.now()});
+          got++;
+        }catch(err){}
+      }
+    }
+  }finally{cachingRun=false}
+  if(got)renderAttachments();
 }
 function attAddLink(itemKey){
   let url=prompt('הדביקו קישור (למשל מ-Google Drive או ממייל האישור):');
@@ -916,7 +1108,7 @@ function attBlock(kind,it){
       +'<button class="btn ghost small" onclick="attAddFile(\''+kind+'_'+it.id+'\')">＋ העלאת קובץ</button>'
       +'<button class="btn ghost small" onclick="attAddLink(\''+kind+'_'+it.id+'\')">＋ קישור</button>'
     +'</div>'
-    +'<div class="att-note">קובץ נשמר במכשיר שבו הועלה 📱 · קישור מסתנכרן לכל המכשירים ☁️</div>'
+    +'<div class="att-note">קבצים וקישורים מסתנכרנים לכל המכשירים ☁️ · קובץ עד 3MB</div>'
   +'</details>';
 }
 async function renderAttachments(openKey){
@@ -926,12 +1118,16 @@ async function renderAttachments(openKey){
     const itemKey=det.id.slice(4);
     const it=findItem(itemKey);
     const links=(it&&it.links)||[];
-    const files=all.filter(f=>f.itemKey===itemKey);
-    const n=links.length+files.length;
+    const cloudFiles=(it&&it.files)||[];
+    const files=all.filter(f=>f.itemKey===itemKey&&f.fid.indexOf('c_')!==0);
+    const n=links.length+cloudFiles.length+files.length;
     det.querySelector('.attcount').textContent=n?'('+n+')':'';
     let html='';
+    cloudFiles.forEach(f=>{
+      html+='<div class="att-item"><span>📄</span><a class="nm" onclick="attOpenCloud(\''+itemKey+'\','+f.id+')">'+esc(f.name)+'</a><button class="del" onclick="attDelCloud(\''+itemKey+'\','+f.id+')">✕</button></div>';
+    });
     files.forEach(f=>{
-      html+='<div class="att-item"><span>📄</span><a class="nm" onclick="attOpen(\''+f.fid+'\')">'+esc(f.name)+'</a><button class="del" onclick="attDelFile(\''+f.fid+'\',\''+itemKey+'\')">✕</button></div>';
+      html+='<div class="att-item"><span>📱</span><a class="nm" onclick="attOpen(\''+f.fid+'\')">'+esc(f.name)+'</a><button class="del" onclick="attDelFile(\''+f.fid+'\',\''+itemKey+'\')">✕</button></div>';
     });
     links.forEach(l=>{
       html+='<div class="att-item"><span>🔗</span><a class="nm" href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.name)+'</a><button class="del" onclick="attDelLink(\''+itemKey+'\','+l.id+')">✕</button></div>';
@@ -967,6 +1163,10 @@ function renderCountdown(){
 
 function renderAll(){renderStrip();renderPlan();renderFlights();renderHotels();renderMoney();renderChecks();renderCountdown();renderAttachments()}
 renderAll();
+/* קבצים מהגרסה הקודמת שנשמרו רק במכשיר — מועלים לענן אוטומטית,
+   וקבצים חדשים מהענן יורדים למטמון המקומי של כל מכשיר */
+setTimeout(migrateLocalFiles,5000);
+setTimeout(cacheCloudFiles,9000);
 
 /* ================= PIN GATE ================= */
 const APP_PIN='1971'; // שנו כאן לקוד בן 4 ספרות שתזכרו שניכם
