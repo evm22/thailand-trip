@@ -214,6 +214,18 @@ nav button{
 nav button .ic{font-size:21px}
 nav button.active{color:var(--emerald);background:var(--emerald-soft)}
 
+/* ---------- Attachments (מסמכים) ---------- */
+.attwrap{margin-top:10px;border-top:1px dashed #E2E9E7;padding-top:8px}
+.attwrap summary{cursor:pointer;list-style:none;font-size:13.5px;font-weight:700;color:var(--emerald);display:flex;align-items:center;gap:6px}
+.attwrap summary::-webkit-details-marker{display:none}
+.attwrap .chevron{margin-inline-start:auto;font-size:13px;color:var(--muted);transition:transform .15s}
+.attwrap[open] .chevron{transform:rotate(180deg)}
+.att-item{display:flex;align-items:center;gap:8px;background:var(--emerald-soft);border-radius:10px;padding:7px 10px;margin-top:6px;font-size:14px}
+.att-item .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--jungle);font-weight:600;text-decoration:none;cursor:pointer}
+.att-btns{display:flex;gap:8px;margin-top:8px}
+.att-btns .btn{flex:1}
+.att-note{font-size:11.5px;color:var(--muted);margin-top:6px}
+
 .footer-note{text-align:center;font-size:12px;color:var(--muted);margin-top:18px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -385,6 +397,8 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
 <div class="footer-note">הנתונים נשמרים בדפדפן ומסתנכרנים בין המכשירים 📱☁️</div>
 </main>
 
+<input type="file" id="attFileInput" style="display:none">
+
 <nav>
   <button class="active" data-tab="plan" onclick="go('plan',this)"><span class="ic">🗓️</span>מסלול</button>
   <button data-tab="flights" onclick="go('flights',this)"><span class="ic">✈️</span>טיסות</button>
@@ -405,7 +419,7 @@ const CITY_COLORS={
   'אחר':'#6B7A76'
 };
 
-/* הנתונים האמיתיים (מלונות/טיסות/צ'קליסט) חיים ב-Firestore בלבד ולא בקובץ הציבורי הזה. */
+/* הנתונים האמיתיים (מלונות/טיסות/צ'קליסט) חיים בענן בלבד ולא בקובץ הציבורי הזה. */
 const DEFAULT_HOTELS=[];
 const DEFAULT_FLIGHTS=[];
 const DEFAULT_CHECKS=[];
@@ -423,10 +437,13 @@ let wds=load('th_wds',[]);
 let rates=load('th_rates',{ILS_THB:9.5,USD_ILS:3.7});
 let dayPlans=load('th_dayplans',{});
 
-/* ================= CLOUD SYNC (jsonblob.com — ללא התחברות/חשבון) =================
-   כל שינוי נשמר גם ב-URL המשותף הזה, וכל מכשיר בודק אותו כל כמה שניות.
+/* ================= CLOUD SYNC (גיבוי כפול — שני שירותים בלתי תלויים) =================
+   כל שינוי נשמר בשני עותקים בענן; אם שירות אחד נופל או נמחק, השני ממשיך לעבוד.
    ההגנה היחידה היא זה שה-ID לא מנוחש + מסך ה-PIN — לא אבטחה אמיתית, מספיק לצורך הזה. */
-const SYNC_URL='https://jsonblob.com/api/jsonBlob/019facda-5624-7454-bf36-c6872509c4cf';
+const SYNC_URLS=[
+  'https://jsonblob.com/api/jsonBlob/019fbcf7-5bad-79f8-8e7c-a4db1a794a5c',
+  'https://extendsclass.com/api/json-storage/bin/baaeaeb'
+];
 const CLOUD_KEYS=['th_hotels_v2','th_flights_v2','th_checks_v2','th_exps','th_wds','th_rates','th_dayplans'];
 function getLocalVar(key){
   return {th_hotels_v2:hotels,th_flights_v2:flights,th_checks_v2:checks,th_exps:exps,th_wds:wds,th_rates:rates,th_dayplans:dayPlans}[key];
@@ -459,43 +476,69 @@ document.addEventListener('focusout',e=>{
     renderAll();
   }
 });
+function setSyncOk(){
+  const t=new Date();
+  setSyncStatus('☁️ מסונכרן · '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0'),'ok');
+}
+function isEmptyVal(v){
+  if(v==null)return true;
+  if(Array.isArray(v))return v.length===0;
+  if(typeof v==='object')return Object.keys(v).length===0;
+  return false;
+}
 let lastSyncedJSON='';
 let pushTimer=null;
 function pushToCloud(){
-  if(!SYNC_URL)return;
   clearTimeout(pushTimer);
   pushTimer=setTimeout(()=>{
     const json=JSON.stringify(buildCloudState());
-    fetch(SYNC_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:json})
-      .then(r=>{if(!r.ok)throw new Error('http '+r.status);lastSyncedJSON=json;setSyncStatus('☁️ מסונכרן','ok')})
-      .catch(()=>setSyncStatus('⚠️ לא ניתן לסנכרן כרגע','warn'));
+    Promise.allSettled(SYNC_URLS.map(u=>
+      fetch(u,{method:'PUT',headers:{'Content-Type':'application/json'},body:json})
+        .then(r=>{if(!r.ok)throw new Error('http '+r.status)})
+    )).then(rs=>{
+      if(rs.some(r=>r.status==='fulfilled')){lastSyncedJSON=json;setSyncOk()}
+      else setSyncStatus('⚠️ לא ניתן לסנכרן כרגע','warn');
+    });
   },600);
 }
+/* מיזוג נתונים מהענן: לעולם לא דורסים מידע מקומי קיים בנתונים ריקים —
+   כך תקלה בענן לא מוחקת את מה שכבר הזנתם. */
+function applyCloud(data){
+  let changed=false,needPush=false;
+  CLOUD_KEYS.forEach(k=>{
+    const local=getLocalVar(k);
+    const cv=data?data[k]:undefined;
+    if(cv!==undefined&&!(isEmptyVal(cv)&&!isEmptyVal(local))){
+      if(JSON.stringify(cv)!==JSON.stringify(local)){persistLocal(k,cv);setLocalVar(k,cv);changed=true}
+    }else if(!isEmptyVal(local)){
+      needPush=true;
+    }
+  });
+  if(changed)safeRenderAll();
+  if(needPush)pushToCloud();
+}
 let pollFails=0;
+function fetchCloud(i){
+  return fetch(SYNC_URLS[i]).then(r=>{if(!r.ok)throw new Error('http '+r.status);return r.json()});
+}
 function pollCloud(force){
   if(!force&&document.visibilityState!=='visible')return;
-  fetch(SYNC_URL).then(r=>{if(!r.ok)throw new Error('http '+r.status);return r.json()}).then(data=>{
+  fetchCloud(0).catch(()=>fetchCloud(1)).then(data=>{
     pollFails=0;
+    setSyncOk();
     const json=JSON.stringify(data);
-    setSyncStatus('☁️ מסונכרן','ok');
     if(json===lastSyncedJSON)return;
     lastSyncedJSON=json;
-    let changed=false;
-    CLOUD_KEYS.forEach(k=>{
-      if(data[k]!==undefined){persistLocal(k,data[k]);setLocalVar(k,data[k]);changed=true}
-    });
-    if(changed)safeRenderAll();
+    applyCloud(data);
   }).catch(()=>{
     pollFails++;
-    if(pollFails>=3)setSyncStatus('⚠️ לא מחובר לענן','warn');
+    if(pollFails>=3)setSyncStatus('⚠️ לא מחובר לענן — בדקו חיבור אינטרנט','warn');
   });
 }
-if(SYNC_URL){
-  setSyncStatus('🔄 מתחבר…','');
-  pollCloud(true);
-  setInterval(()=>pollCloud(),10000);
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollCloud()});
-}
+setSyncStatus('🔄 מתחבר…','');
+pollCloud(true);
+setInterval(()=>pollCloud(),10000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollCloud()});
 
 /* ================= HELPERS ================= */
 const HEB_DOW=['א','ב','ג','ד','ה','ו','ש'];
@@ -506,7 +549,7 @@ function cityOn(dateStr){
   for(const h of hotels){if(dateStr>=h.in&&dateStr<h.out)return h.city}
   return null;
 }
-function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function getDayPlan(ds){return dayPlans[ds]||{morning:'',noon:'',evening:''}}
 function saveDayPlanField(ds,field,val){
   if(!dayPlans[ds])dayPlans[ds]={morning:'',noon:'',evening:''};
@@ -607,7 +650,8 @@ function renderFlights(){
       +'<div class="flight-leg"><div class="fl-time">'+(f.time||'—')+'</div>'
       +'<div class="fl-route"><div class="r">'+f.from+' ← '+f.to+'</div><div class="s">'+f.num+(f.ref?' · '+f.ref:'')+'</div></div>'
       +(f.fixed?'<span class="badge ok">✓</span>':(f.todo?'<span class="badge warn">להזמין</span>':'')+'<button class="del" onclick="delFlight('+f.id+')">✕</button>')
-      +'</div>';
+      +'</div>'
+      +attBlock('flight',f);
     el.appendChild(c);
   });
 }
@@ -640,7 +684,8 @@ function renderHotels(){
       +'<div class="meta">'+fmt(h.in)+' – '+fmt(h.out)+(h.note?' · '+h.note:'')+'</div>'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">'
       +'<span class="badge ok">מאושר ✓</span>'
-      +'<button class="del" onclick="delHotel('+h.id+')">✕</button></div>';
+      +'<button class="del" onclick="delHotel('+h.id+')">✕</button></div>'
+      +attBlock('hotel',h);
     el.appendChild(c);
   });
 }
@@ -770,6 +815,132 @@ function addChk(){
 }
 function delChk(id){checks=checks.filter(c=>c.id!==id);save('th_checks_v2',checks);renderChecks()}
 
+/* ================= ATTACHMENTS (מסמכים: קבצים + קישורים) =================
+   קבצים נשמרים ב-IndexedDB במכשיר שבו הועלו (גדולים מדי לענן);
+   קישורים נשמרים על המלון/הטיסה עצמם ומסתנכרנים לכל המכשירים. */
+let filesDB=null;
+const filesDBReady=new Promise(res=>{
+  try{
+    const rq=indexedDB.open('th_files',1);
+    rq.onupgradeneeded=e=>{e.target.result.createObjectStore('files',{keyPath:'fid'})};
+    rq.onsuccess=e=>{filesDB=e.target.result;res(true)};
+    rq.onerror=()=>res(false);
+  }catch(e){res(false)}
+});
+function idbAll(){return new Promise(res=>{
+  if(!filesDB)return res([]);
+  const out=[];
+  const cur=filesDB.transaction('files').objectStore('files').openCursor();
+  cur.onsuccess=e=>{const c=e.target.result;if(c){out.push({fid:c.value.fid,itemKey:c.value.itemKey,name:c.value.name});c.continue()}else res(out)};
+  cur.onerror=()=>res([]);
+})}
+function idbGet(fid){return new Promise(res=>{
+  if(!filesDB)return res(null);
+  const rq=filesDB.transaction('files').objectStore('files').get(fid);
+  rq.onsuccess=()=>res(rq.result);rq.onerror=()=>res(null);
+})}
+function idbPut(rec){return new Promise(res=>{
+  if(!filesDB)return res(false);
+  const tx=filesDB.transaction('files','readwrite');
+  tx.objectStore('files').put(rec);
+  tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);
+})}
+function idbDel(fid){return new Promise(res=>{
+  if(!filesDB)return res(false);
+  const tx=filesDB.transaction('files','readwrite');
+  tx.objectStore('files').delete(fid);
+  tx.oncomplete=()=>res(true);tx.onerror=()=>res(false);
+})}
+function findItem(itemKey){
+  const sep=itemKey.indexOf('_');
+  const kind=itemKey.slice(0,sep),id=itemKey.slice(sep+1);
+  const arr=kind==='hotel'?hotels:flights;
+  return arr.find(x=>String(x.id)===id);
+}
+function saveItemArr(itemKey){
+  if(itemKey.startsWith('hotel'))save('th_hotels_v2',hotels);
+  else save('th_flights_v2',flights);
+}
+let attTarget=null;
+function attAddFile(itemKey){attTarget=itemKey;document.getElementById('attFileInput').click()}
+document.getElementById('attFileInput').addEventListener('change',async e=>{
+  const f=e.target.files[0];
+  e.target.value='';
+  if(!f||!attTarget)return;
+  if(f.size>15*1024*1024){alert('הקובץ גדול מדי (עד 15MB)');return}
+  await filesDBReady;
+  const ok=await idbPut({fid:attTarget+'_'+Date.now(),itemKey:attTarget,name:f.name,type:f.type,blob:f,added:Date.now()});
+  if(!ok)alert('לא הצלחנו לשמור את הקובץ במכשיר הזה');
+  renderAttachments(attTarget);
+});
+async function attOpen(fid){
+  const rec=await idbGet(fid);
+  if(!rec){alert('הקובץ שמור במכשיר אחר — פתחו אותו שם, או הוסיפו קישור במקום');return}
+  const url=URL.createObjectURL(rec.blob);
+  const a=document.createElement('a');
+  a.href=url;a.target='_blank';a.rel='noopener';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+async function attDelFile(fid,itemKey){
+  if(!confirm('למחוק את הקובץ?'))return;
+  await idbDel(fid);
+  renderAttachments(itemKey);
+}
+function attAddLink(itemKey){
+  let url=prompt('הדביקו קישור (למשל מ-Google Drive או ממייל האישור):');
+  if(!url)return;
+  url=url.trim();
+  if(!/^https?:\/\//i.test(url))url='https://'+url;
+  const name=(prompt('שם לקישור (למשל: אישור הזמנה):')||'קישור').trim();
+  const it=findItem(itemKey);
+  if(!it)return;
+  if(!it.links)it.links=[];
+  it.links.push({id:Date.now(),name,url});
+  saveItemArr(itemKey);
+  renderAttachments(itemKey);
+}
+function attDelLink(itemKey,linkId){
+  const it=findItem(itemKey);
+  if(!it||!it.links)return;
+  if(!confirm('להסיר את הקישור?'))return;
+  it.links=it.links.filter(l=>l.id!==linkId);
+  saveItemArr(itemKey);
+  renderAttachments(itemKey);
+}
+function attBlock(kind,it){
+  return '<details class="attwrap" id="att-'+kind+'_'+it.id+'">'
+    +'<summary>📎 מסמכים <span class="attcount"></span><span class="chevron">⌄</span></summary>'
+    +'<div class="attlist"></div>'
+    +'<div class="att-btns">'
+      +'<button class="btn ghost small" onclick="attAddFile(\''+kind+'_'+it.id+'\')">＋ העלאת קובץ</button>'
+      +'<button class="btn ghost small" onclick="attAddLink(\''+kind+'_'+it.id+'\')">＋ קישור</button>'
+    +'</div>'
+    +'<div class="att-note">קובץ נשמר במכשיר שבו הועלה 📱 · קישור מסתנכרן לכל המכשירים ☁️</div>'
+  +'</details>';
+}
+async function renderAttachments(openKey){
+  await filesDBReady;
+  const all=await idbAll();
+  document.querySelectorAll('details.attwrap').forEach(det=>{
+    const itemKey=det.id.slice(4);
+    const it=findItem(itemKey);
+    const links=(it&&it.links)||[];
+    const files=all.filter(f=>f.itemKey===itemKey);
+    const n=links.length+files.length;
+    det.querySelector('.attcount').textContent=n?'('+n+')':'';
+    let html='';
+    files.forEach(f=>{
+      html+='<div class="att-item"><span>📄</span><a class="nm" onclick="attOpen(\''+f.fid+'\')">'+esc(f.name)+'</a><button class="del" onclick="attDelFile(\''+f.fid+'\',\''+itemKey+'\')">✕</button></div>';
+    });
+    links.forEach(l=>{
+      html+='<div class="att-item"><span>🔗</span><a class="nm" href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.name)+'</a><button class="del" onclick="attDelLink(\''+itemKey+'\','+l.id+')">✕</button></div>';
+    });
+    det.querySelector('.attlist').innerHTML=html||'<div class="att-note">אין עדיין מסמכים — הוסיפו אישור הזמנה, כרטיס טיסה או קישור</div>';
+    if(openKey&&itemKey===openKey)det.open=true;
+  });
+}
+
 /* ================= NAV & COUNTDOWN ================= */
 function go(tab,btn){
   document.querySelectorAll('section.tab').forEach(s=>s.classList.remove('active'));
@@ -794,7 +965,7 @@ function renderCountdown(){
   }
 }
 
-function renderAll(){renderStrip();renderPlan();renderFlights();renderHotels();renderMoney();renderChecks();renderCountdown()}
+function renderAll(){renderStrip();renderPlan();renderFlights();renderHotels();renderMoney();renderChecks();renderCountdown();renderAttachments()}
 renderAll();
 
 /* ================= PIN GATE ================= */
