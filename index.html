@@ -173,11 +173,17 @@ label{font-size:13px;font-weight:700;color:var(--muted);display:block;margin:10p
   padding:10px 12px;margin-bottom:8px;box-shadow:var(--shadow);
 }
 .exp-item .cat{font-size:22px}
-.exp-item .info{flex:1}
+.exp-item .info{flex:1;min-width:0}
 .exp-item .info .t{font-weight:700}
 .exp-item .info .m{font-size:12px;color:var(--muted)}
 .exp-item .sum{font-weight:700;color:var(--jungle);white-space:nowrap}
+.exp-item .itembtns{display:flex;gap:2px;flex:0 0 auto}
 .del{background:none;color:#B9C4C1;font-size:18px;padding:4px}
+.edt{background:none;color:var(--emerald);font-size:16px;padding:4px}
+.edit-row{background:#fff;border-radius:12px;padding:12px;margin-bottom:8px;box-shadow:var(--shadow);border:1.5px solid var(--emerald)}
+.edit-row .row{margin-bottom:8px}
+.edit-row .rowbtns{display:flex;gap:8px;margin-top:4px}
+.edit-row .rowbtns .btn{flex:1;padding:9px}
 .catbar{margin:6px 0 2px}
 .catbar .cb-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:2px}
 .cb-track{height:8px;border-radius:99px;background:#E7EDEB;overflow:hidden}
@@ -225,6 +231,14 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
 .att-btns{display:flex;gap:8px;margin-top:8px}
 .att-btns .btn{flex:1}
 .att-note{font-size:11.5px;color:var(--muted);margin-top:6px}
+
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(10px);
+  background:var(--jungle);color:#fff;padding:10px 20px;border-radius:999px;
+  font-size:14px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.25);
+  z-index:250;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 .footer-note{text-align:center;font-size:12px;color:var(--muted);margin-top:18px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -341,6 +355,10 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
     <div class="totalbox" style="background:var(--emerald)"><div class="amt" id="cashTHB">0 ฿</div><div class="lbl">💵 מזומן בארנק</div></div>
     <div class="totalbox" style="background:#3E6B8C"><div class="amt" id="cardILS">0 ₪</div><div class="lbl">💳 הוצא באשראי</div></div>
   </div>
+  <div class="totals">
+    <div class="totalbox" style="background:#7A4E8C"><div class="amt" id="kidShareILS">0 ₪</div><div class="lbl">🧒 מזה על הילדים</div></div>
+    <div class="totalbox" style="background:#4E6E58"><div class="amt" id="noKidsILS">0 ₪</div><div class="lbl">סה"כ בלי הילדים</div></div>
+  </div>
 
   <div class="card">
     <h3>הוספת הוצאה</h3>
@@ -379,7 +397,7 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
     <p class="meta" style="margin-top:8px;font-size:13px">💡 בכספומטים בתאילנד יש בד"כ עמלה של 220 ฿ למשיכה — העמלה תירשם אוטומטית כהוצאה.</p>
   </div>
 
-  <h2 class="sec" style="font-size:18px" id="wdTitle">משיכות מזומן</h2>
+  <h2 class="sec" style="font-size:18px" id="wdTitle">מזומן ומשיכות 💵</h2>
   <div id="wdList"></div>
 
   <div class="card">
@@ -388,7 +406,7 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
       <div><label>1 ₪ = כמה באט</label><input type="number" id="rateTHB" step="0.01"></div>
       <div><label>1 $ = כמה שקל</label><input type="number" id="rateUSD" step="0.01"></div>
     </div>
-    <p class="meta" style="margin-top:8px;font-size:13px">אפשר לעדכן לפי השער בפועל — הכל יחושב מחדש.</p>
+    <p class="meta" style="margin-top:8px;font-size:13px">🔄 מתעדכן אוטומטית פעם ביום לפי השער בשוק. אפשר גם לערוך ידנית — הכל יחושב מחדש.</p>
   </div>
 
   <h2 class="sec" style="font-size:18px">לפי קטגוריה</h2>
@@ -396,6 +414,47 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
 
   <h2 class="sec" style="font-size:18px">כל ההוצאות</h2>
   <div id="expList"></div>
+</section>
+
+<!-- ============ KIDS ============ -->
+<section class="tab" id="tab-kids">
+  <h2 class="sec">הוצאות ילדים 🧒</h2>
+
+  <div class="totals">
+    <div class="totalbox" style="background:#3E6B8C"><div class="amt" id="kidTotArbel">0 ₪</div><div class="lbl">ארבל — סה"כ שהוצא</div></div>
+    <div class="totalbox" style="background:#8A5A2B"><div class="amt" id="kidTotYarden">0 ₪</div><div class="lbl">ירדן — סה"כ שהוצא</div></div>
+  </div>
+
+  <div class="card">
+    <h3>הוספת הוצאה</h3>
+    <label>עבור מי?</label>
+    <select id="k-kid">
+      <option value="arbel">ארבל</option>
+      <option value="yarden">ירדן</option>
+    </select>
+    <label>תיאור</label>
+    <input id="k-desc" placeholder="גלידה, מזכרת, אטרקציה...">
+    <div class="row">
+      <div><label>סכום</label><input type="number" id="k-amt" inputmode="decimal" placeholder="0"></div>
+      <div><label>מטבע</label>
+        <select id="k-cur"><option value="THB">฿ באט</option><option value="ILS">₪ שקל</option><option value="USD">$ דולר</option></select>
+      </div>
+    </div>
+    <div class="row">
+      <div><label>איך שילמתם?</label>
+        <select id="k-pay"><option value="cash">💵 מזומן</option><option value="card">💳 אשראי</option></select>
+      </div>
+      <div><label>תאריך</label><input type="date" id="k-date"></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn" onclick="addKidExp()">שמירת הוצאה</button></div>
+    <p class="meta" style="margin-top:8px;font-size:13px">💡 ההוצאות כאן נספרות אוטומטית גם בטאב הכספים (בסה"כ הכולל, במזומן/אשראי ובפירוט "מזה על הילדים").</p>
+  </div>
+
+  <h2 class="sec" style="font-size:18px">ארבל</h2>
+  <div id="kidListArbel"></div>
+
+  <h2 class="sec" style="font-size:18px">ירדן</h2>
+  <div id="kidListYarden"></div>
 </section>
 
 <!-- ============ CHECKLIST ============ -->
@@ -411,15 +470,20 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
 </section>
 
 <div class="footer-note">הנתונים נשמרים בדפדפן ומסתנכרנים בין המכשירים 📱☁️</div>
+<div style="text-align:center;margin-top:10px">
+  <button class="btn ghost small" onclick="exportBackup()">⬇️ גיבוי כל הנתונים לקובץ</button>
+</div>
 </main>
 
 <input type="file" id="attFileInput" style="display:none">
+<div class="toast" id="toast"></div>
 
 <nav>
   <button class="active" data-tab="plan" onclick="go('plan',this)"><span class="ic">🗓️</span>מסלול</button>
   <button data-tab="flights" onclick="go('flights',this)"><span class="ic">✈️</span>טיסות</button>
   <button data-tab="hotels" onclick="go('hotels',this)"><span class="ic">🏨</span>מלונות</button>
   <button data-tab="money" onclick="go('money',this)"><span class="ic">💰</span>כספים</button>
+  <button data-tab="kids" onclick="go('kids',this)"><span class="ic">🧒</span>ילדים</button>
   <button data-tab="check" onclick="go('check',this)"><span class="ic">✅</span>משימות</button>
 </nav>
 
@@ -453,6 +517,7 @@ let wds=load('th_wds',[]);
 let rates=load('th_rates',{ILS_THB:9.5,USD_ILS:3.7});
 let dayPlans=load('th_dayplans',{});
 let cars=load('th_cars',[]);
+let kidExps=load('th_kid_exps',[]);
 
 /* ================= CLOUD SYNC (גיבוי כפול — שני שירותים בלתי תלויים) =================
    כל שינוי נשמר בשני עותקים בענן; אם שירות אחד נופל או נמחק, השני ממשיך לעבוד
@@ -473,9 +538,9 @@ const FILE_POOL=[
   '23cb8767e87ff5701904','37ce824e616764f771c5','37f058d81116d9fd3b40','970713c5856720a8c843',
   '8778ac42f73f2febd951'
 ].map(id=>'https://api.npoint.io/'+id);
-const CLOUD_KEYS=['th_hotels_v2','th_flights_v2','th_checks_v2','th_exps','th_wds','th_rates','th_dayplans','th_cars'];
+const CLOUD_KEYS=['th_hotels_v2','th_flights_v2','th_checks_v2','th_exps','th_wds','th_rates','th_dayplans','th_cars','th_kid_exps'];
 function getLocalVar(key){
-  return {th_hotels_v2:hotels,th_flights_v2:flights,th_checks_v2:checks,th_exps:exps,th_wds:wds,th_rates:rates,th_dayplans:dayPlans,th_cars:cars}[key];
+  return {th_hotels_v2:hotels,th_flights_v2:flights,th_checks_v2:checks,th_exps:exps,th_wds:wds,th_rates:rates,th_dayplans:dayPlans,th_cars:cars,th_kid_exps:kidExps}[key];
 }
 function setLocalVar(key,val){
   if(key==='th_hotels_v2')hotels=val;
@@ -486,6 +551,7 @@ function setLocalVar(key,val){
   else if(key==='th_rates')rates=val;
   else if(key==='th_dayplans')dayPlans=val;
   else if(key==='th_cars')cars=val;
+  else if(key==='th_kid_exps')kidExps=val;
 }
 function buildCloudState(){
   const o={};CLOUD_KEYS.forEach(k=>o[k]=getLocalVar(k));return o;
@@ -548,13 +614,21 @@ function applyCloud(data){
   if(needPush)pushToCloud();
 }
 let pollFails=0;
+let pollN=0;
+/* ברירת מחדל: בודקים רק את הענן הראשי (כל 10 שניות). את ענן הגיבוי בודקים
+   פעם בדקה בלבד (או כשהראשי נופל) — כדי לא להעמיס עליו ולהיחסם. */
 function pollCloud(force){
   if(!force&&document.visibilityState!=='visible')return;
-  Promise.allSettled(SYNC_BACKENDS.map(b=>
+  pollN++;
+  _pollWith((force||pollN%6===0)?SYNC_BACKENDS:[SYNC_BACKENDS[0]]);
+}
+function _pollWith(backends){
+  Promise.allSettled(backends.map(b=>
     fetch(b.url).then(r=>{if(!r.ok)throw new Error('http '+r.status);return r.json()})
   )).then(rs=>{
     const datas=rs.map(r=>r.status==='fulfilled'?r.value:null);
     if(datas.every(d=>!d)){
+      if(backends.length<SYNC_BACKENDS.length){_pollWith(SYNC_BACKENDS);return}
       pollFails++;
       if(pollFails>=3)setSyncStatus('⚠️ לא מחובר לענן — בדקו חיבור אינטרנט','warn');
       return;
@@ -568,7 +642,7 @@ function pollCloud(force){
       for(const d of datas){if(d&&d[k]!==undefined){merged[k]=d[k];return}}
     });
     const json=JSON.stringify(merged);
-    /* אם אחד העננים נפל, ריק או שונה — דוחפים אליו את המצב המלא (ריפוי עצמי) */
+    /* אם ענן שנבדק נפל, ריק או שונה — דוחפים אליו את המצב המלא (ריפוי עצמי) */
     const outOfSync=datas.some(d=>!d||JSON.stringify(d)!==json);
     if(json!==lastSyncedJSON){
       lastSyncedJSON=json;
@@ -583,7 +657,20 @@ setInterval(()=>pollCloud(),10000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollCloud()});
 
 /* ================= HELPERS ================= */
+let toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),1800);
+}
 const HEB_DOW=['א','ב','ג','ד','ה','ו','ש'];
+/* תאריך היום לפי השעון המקומי של המכשיר (לא UTC!) — בתאילנד (UTC+7)
+   toISOString היה מחזיר את אתמול עד 7 בבוקר. */
+function localDateStr(d){
+  d=d||new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
 function d(s){return new Date(s+'T00:00:00')}
 function fmt(s){const x=d(s);return x.getDate()+'.'+(x.getMonth()+1)}
 function nights(a,b){return Math.round((d(b)-d(a))/86400000)}
@@ -602,7 +689,7 @@ function saveDayPlanField(ds,field,val){
 /* ================= DAY STRIP ================= */
 function renderStrip(){
   const el=document.getElementById('strip');el.innerHTML='';
-  const today=new Date().toISOString().slice(0,10);
+  const today=localDateStr();
   for(let i=7;i<=31;i++){
     const ds='2026-08-'+String(i).padStart(2,'0');
     const city=cityOn(ds);
@@ -636,7 +723,7 @@ function renderPlan(){
 
   // one accordion card per day, with manual morning/noon/evening plan fields
   const el=document.getElementById('planList');el.innerHTML='';
-  const todayStr=new Date().toISOString().slice(0,10);
+  const todayStr=localDateStr();
   for(let i=7;i<=31;i++){
     const ds='2026-08-'+String(i).padStart(2,'0');
     const city=cityOn(ds);
@@ -796,13 +883,22 @@ function renderMoney(){
     const v=toILS(e);ils+=v;
     if(e.pay==='card')cardIls+=v;else cashTHBspent+=toTHB(e);
   });
-  const thb=ils*rates.ILS_THB;
+  // הוצאות הילדים נספרות אוטומטית בסך הכולל, במזומן/אשראי ובפירוט הייעודי
+  let kidIls=0;
+  kidExps.forEach(e=>{
+    const v=toILS(e);kidIls+=v;
+    if(e.pay==='card')cardIls+=v;else cashTHBspent+=toTHB(e);
+  });
+  const totalIls=ils+kidIls;
+  const thb=totalIls*rates.ILS_THB;
   const withdrawn=wds.reduce((s,w)=>s+w.amt,0);
   const cashLeft=withdrawn-cashTHBspent;
-  document.getElementById('totILS').textContent=Math.round(ils).toLocaleString()+' ₪';
+  document.getElementById('totILS').textContent=Math.round(totalIls).toLocaleString()+' ₪';
   document.getElementById('totTHB').textContent=Math.round(thb).toLocaleString()+' ฿';
   document.getElementById('cashTHB').textContent=Math.round(cashLeft).toLocaleString()+' ฿';
   document.getElementById('cardILS').textContent=Math.round(cardIls).toLocaleString()+' ₪';
+  document.getElementById('kidShareILS').textContent=Math.round(kidIls).toLocaleString()+' ₪';
+  document.getElementById('noKidsILS').textContent=Math.round(ils).toLocaleString()+' ₪';
   const cashBox=document.getElementById('cashTHB').parentElement;
   cashBox.style.background=cashLeft<0?'var(--coral)':'var(--emerald)';
 
@@ -810,16 +906,20 @@ function renderMoney(){
   const wl=document.getElementById('wdList');wl.innerHTML='';
   document.getElementById('wdTitle').style.display=wds.length?'block':'none';
   [...wds].sort((a,b)=>a.date<b.date?1:-1).forEach(w=>{
+    if(editingWd.has(w.id)){wl.appendChild(buildWdEditRow(w));return}
     const it=document.createElement('div');it.className='exp-item';
-    it.innerHTML='<span class="cat">🏧</span>'
-      +'<div class="info"><div class="t">משיכת מזומן</div><div class="m">'+fmt(w.date)+(w.fee?' · עמלה '+w.fee+' ฿':'')+'</div></div>'
+    it.innerHTML='<span class="cat">'+(w.start?'💼':'🏧')+'</span>'
+      +'<div class="info"><div class="t">'+(w.start?'מזומן שהבאנו מהבית':'משיכת מזומן')+'</div>'
+      +'<div class="m">'+fmt(w.date)+(w.fee?' · עמלה '+w.fee+' ฿':'')+(w.start?' · לא נספר כמשיכה':'')+'</div></div>'
       +'<span class="sum" style="color:var(--emerald)">+'+w.amt.toLocaleString()+' ฿</span>'
-      +'<button class="del" onclick="delWd('+w.id+')">✕</button>';
+      +'<span class="itembtns"><button class="edt" onclick="editWdStart('+w.id+')">✏️</button>'
+      +'<button class="del" onclick="delWd('+w.id+')">✕</button></span>';
     wl.appendChild(it);
   });
 
-  // category bars
+  // category bars (כולל קטגוריית ילדים מהלשונית הייעודית)
   const byCat={};exps.forEach(e=>{byCat[e.cat]=(byCat[e.cat]||0)+toILS(e)});
+  if(kidIls>0)byCat['🧒 ילדים']=(byCat['🧒 ילדים']||0)+kidIls;
   const cb=document.getElementById('catBars');
   const max=Math.max(1,...Object.values(byCat));
   cb.innerHTML=Object.keys(byCat).length?'':'<div class="meta">עוד אין הוצאות — מתחילים לתעד בטיול 🙂</div>';
@@ -830,12 +930,14 @@ function renderMoney(){
 
   const el=document.getElementById('expList');el.innerHTML='';
   [...exps].sort((a,b)=>a.date<b.date?1:-1).forEach(e=>{
+    if(editingExp.has(e.id)){el.appendChild(buildExpEditRow(e));return}
     const it=document.createElement('div');it.className='exp-item';
     const sym=e.cur==='THB'?'฿':e.cur==='USD'?'$':'₪';
     it.innerHTML='<span class="cat">'+e.cat+'</span>'
-      +'<div class="info"><div class="t">'+e.desc+'</div><div class="m">'+fmt(e.date)+' · '+(e.pay==='card'?'💳 אשראי':'💵 מזומן')+' · ≈ '+Math.round(toILS(e)).toLocaleString()+' ₪</div></div>'
+      +'<div class="info"><div class="t">'+esc(e.desc)+'</div><div class="m">'+fmt(e.date)+' · '+(e.pay==='card'?'💳 אשראי':'💵 מזומן')+' · ≈ '+Math.round(toILS(e)).toLocaleString()+' ₪</div></div>'
       +'<span class="sum">'+e.amt.toLocaleString()+' '+sym+'</span>'
-      +'<button class="del" onclick="delExp('+e.id+')">✕</button>';
+      +'<span class="itembtns"><button class="edt" onclick="editExpStart('+e.id+')">✏️</button>'
+      +'<button class="del" onclick="delExp('+e.id+')">✕</button></span>';
     el.appendChild(it);
   });
 }
@@ -846,16 +948,17 @@ function addExp(){
   exps.push({id:Date.now(),desc,amt,cur:document.getElementById('e-cur').value,
     cat:document.getElementById('e-cat').value,
     pay:document.getElementById('e-pay').value,
-    date:document.getElementById('e-date').value||new Date().toISOString().slice(0,10)});
+    date:document.getElementById('e-date').value||localDateStr()});
   save('th_exps',exps);
   document.getElementById('e-desc').value='';document.getElementById('e-amt').value='';
   renderMoney();
+  showToast('✅ ההוצאה נרשמה');
 }
 function addWd(){
   const amt=parseFloat(document.getElementById('w-amt').value);
   if(!amt||amt<=0){alert('צריך למלא כמה באט משכתם');return}
   const fee=parseFloat(document.getElementById('w-fee').value)||0;
-  const date=document.getElementById('w-date').value||new Date().toISOString().slice(0,10);
+  const date=document.getElementById('w-date').value||localDateStr();
   wds.push({id:Date.now(),amt,fee,date});
   save('th_wds',wds);
   if(fee>0){
@@ -864,11 +967,201 @@ function addWd(){
   }
   document.getElementById('w-amt').value='';document.getElementById('w-fee').value='';
   renderMoney();
+  showToast('✅ המשיכה נרשמה');
 }
-function delWd(id){wds=wds.filter(w=>w.id!==id);save('th_wds',wds);renderMoney()}
-function delExp(id){exps=exps.filter(e=>e.id!==id);save('th_exps',exps);renderMoney()}
+function delWd(id){if(!confirm('למחוק את הרשומה?'))return;wds=wds.filter(w=>w.id!==id);editingWd.delete(id);save('th_wds',wds);renderMoney()}
+function delExp(id){if(!confirm('למחוק את ההוצאה?'))return;exps=exps.filter(e=>e.id!==id);editingExp.delete(id);save('th_exps',exps);renderMoney()}
+
+/* ===== עריכת רשומות (משיכות/הוצאות) — כדי לתקן טעות הקלדה בלי למחוק ולהוסיף מחדש ===== */
+const editingWd=new Set(), editingExp=new Set(), editingKid=new Set();
+
+function editWdStart(id){editingWd.add(id);renderMoney()}
+function editWdCancel(id){editingWd.delete(id);renderMoney()}
+function buildWdEditRow(w){
+  const row=document.createElement('div');row.className='edit-row';
+  row.innerHTML='<div class="row">'
+      +'<div><label>כמה באט'+(w.start?'':' משכתם')+'</label><input type="number" id="ew-amt-'+w.id+'" inputmode="decimal" value="'+w.amt+'"></div>'
+      +(w.start?'':'<div><label>עמלה בבאט</label><input type="number" id="ew-fee-'+w.id+'" inputmode="decimal" value="'+(w.fee||0)+'"></div>')
+    +'</div>'
+    +'<label>תאריך</label><input type="date" id="ew-date-'+w.id+'" value="'+w.date+'">'
+    +'<div class="rowbtns"><button class="btn small" onclick="editWdSave('+w.id+')">💾 שמירה</button>'
+    +'<button class="btn ghost small" onclick="editWdCancel('+w.id+')">ביטול</button></div>';
+  return row;
+}
+function editWdSave(id){
+  const w=wds.find(x=>x.id===id);if(!w)return;
+  const amt=parseFloat(document.getElementById('ew-amt-'+id).value);
+  if(!amt||amt<=0){alert('הסכום חייב להיות מספר חיובי');return}
+  w.amt=amt;
+  if(!w.start){
+    const feeEl=document.getElementById('ew-fee-'+id);
+    w.fee=feeEl?(parseFloat(feeEl.value)||0):0;
+  }
+  const dateEl=document.getElementById('ew-date-'+id);
+  if(dateEl&&dateEl.value)w.date=dateEl.value;
+  editingWd.delete(id);
+  save('th_wds',wds);
+  renderMoney();
+}
+
+function editExpStart(id){editingExp.add(id);renderMoney()}
+function editExpCancel(id){editingExp.delete(id);renderMoney()}
+function buildExpEditRow(e){
+  const row=document.createElement('div');row.className='edit-row';
+  const curOpt=c=>'<option value="'+c+'"'+(e.cur===c?' selected':'')+'>'+({THB:'฿ באט',ILS:'₪ שקל',USD:'$ דולר'}[c])+'</option>';
+  const catOpt=c=>'<option value="'+c+'"'+(e.cat===c?' selected':'')+'>'+c+'</option>';
+  const cats=['🍜','🚕','🏨','🎟️','🛍️','✈️','📦'];
+  row.innerHTML='<label>תיאור</label><input id="ee-desc-'+e.id+'" value="'+esc(e.desc)+'">'
+    +'<div class="row">'
+      +'<div><label>סכום</label><input type="number" id="ee-amt-'+e.id+'" inputmode="decimal" value="'+e.amt+'"></div>'
+      +'<div><label>מטבע</label><select id="ee-cur-'+e.id+'">'+['THB','ILS','USD'].map(curOpt).join('')+'</select></div>'
+    +'</div>'
+    +'<div class="row">'
+      +'<div><label>קטגוריה</label><select id="ee-cat-'+e.id+'">'+cats.map(catOpt).join('')+'</select></div>'
+      +'<div><label>תאריך</label><input type="date" id="ee-date-'+e.id+'" value="'+e.date+'"></div>'
+    +'</div>'
+    +'<label>איך שולם</label><select id="ee-pay-'+e.id+'">'
+      +'<option value="cash"'+(e.pay==='cash'?' selected':'')+'>💵 מזומן</option>'
+      +'<option value="card"'+(e.pay==='card'?' selected':'')+'>💳 אשראי</option></select>'
+    +'<div class="rowbtns"><button class="btn small" onclick="editExpSave('+e.id+')">💾 שמירה</button>'
+    +'<button class="btn ghost small" onclick="editExpCancel('+e.id+')">ביטול</button></div>';
+  return row;
+}
+function editExpSave(id){
+  const e=exps.find(x=>x.id===id);if(!e)return;
+  const desc=document.getElementById('ee-desc-'+id).value.trim();
+  const amt=parseFloat(document.getElementById('ee-amt-'+id).value);
+  if(!desc||!amt||amt<=0){alert('צריך תיאור וסכום תקין');return}
+  e.desc=desc;e.amt=amt;
+  e.cur=document.getElementById('ee-cur-'+id).value;
+  e.cat=document.getElementById('ee-cat-'+id).value;
+  e.pay=document.getElementById('ee-pay-'+id).value;
+  const dateEl=document.getElementById('ee-date-'+id);
+  if(dateEl&&dateEl.value)e.date=dateEl.value;
+  editingExp.delete(id);
+  save('th_exps',exps);
+  renderMoney();
+}
 document.getElementById('rateTHB').addEventListener('change',ev=>{rates.ILS_THB=parseFloat(ev.target.value)||9.5;save('th_rates',rates);renderMoney()});
 document.getElementById('rateUSD').addEventListener('change',ev=>{rates.USD_ILS=parseFloat(ev.target.value)||3.7;save('th_rates',rates);renderMoney()});
+
+/* ===== שערי חליפין — עדכון יומי אוטומטי =====
+   פעם ביום (fx_date נשמר ומסתנכרן, כך שרק מכשיר אחד מושך בפועל) מושכים
+   שער ILS→THB ו-USD→ILS משירות חינמי, עם מקור גיבוי. עריכה ידנית עדיין
+   אפשרית ותחזיק עד העדכון האוטומטי של היום שאחרי. */
+async function refreshRates(){
+  const today=localDateStr();
+  if(rates.fx_date===today)return;
+  const sources=[
+    'https://open.er-api.com/v6/latest/ILS',
+    'https://api.frankfurter.dev/v1/latest?base=ILS&symbols=THB,USD'
+  ];
+  for(const url of sources){
+    try{
+      const r=await fetch(url);
+      if(!r.ok)continue;
+      const j=await r.json();
+      const thb=j&&j.rates&&j.rates.THB;
+      const usd=j&&j.rates&&j.rates.USD;
+      if(!thb||thb<5||thb>25)continue; // בדיקת שפיות — לא דורסים בערך הזוי
+      rates.ILS_THB=Math.round(thb*100)/100;
+      if(usd&&usd>0)rates.USD_ILS=Math.round((1/usd)*100)/100;
+      rates.fx_date=today;
+      save('th_rates',rates);
+      renderMoney();
+      renderKids();
+      return;
+    }catch(e){}
+  }
+}
+refreshRates();
+setInterval(refreshRates,60*60*1000); // אם הטאב נשאר פתוח מעבר לחצות
+
+/* ================= KIDS TAB ================= */
+function renderKids(){
+  const tot={arbel:0,yarden:0};
+  kidExps.forEach(e=>{if(tot[e.kid]!==undefined)tot[e.kid]+=toILS(e)});
+  document.getElementById('kidTotArbel').textContent=Math.round(tot.arbel).toLocaleString()+' ₪';
+  document.getElementById('kidTotYarden').textContent=Math.round(tot.yarden).toLocaleString()+' ₪';
+  [['arbel','kidListArbel'],['yarden','kidListYarden']].forEach(([kid,elId])=>{
+    const el=document.getElementById(elId);el.innerHTML='';
+    const list=kidExps.filter(e=>e.kid===kid).sort((a,b)=>a.date<b.date?1:-1);
+    if(!list.length){
+      el.innerHTML='<div class="meta" style="margin:2px 2px 10px">אין הוצאות עדיין 🙂</div>';
+      return;
+    }
+    list.forEach(e=>{
+      if(editingKid.has(e.id)){el.appendChild(buildKidEditRow(e));return}
+      const sym=e.cur==='THB'?'฿':e.cur==='USD'?'$':'₪';
+      const it=document.createElement('div');it.className='exp-item';
+      it.innerHTML='<span class="cat">🧒</span>'
+        +'<div class="info"><div class="t">'+esc(e.desc)+'</div>'
+        +'<div class="m">'+fmt(e.date)+' · '+(e.pay==='card'?'💳 אשראי':'💵 מזומן')+' · ≈ '+Math.round(toILS(e)).toLocaleString()+' ₪</div></div>'
+        +'<span class="sum">'+e.amt.toLocaleString()+' '+sym+'</span>'
+        +'<span class="itembtns"><button class="edt" onclick="editKidStart('+e.id+')">✏️</button>'
+        +'<button class="del" onclick="delKidExp('+e.id+')">✕</button></span>';
+      el.appendChild(it);
+    });
+  });
+}
+function editKidStart(id){editingKid.add(id);renderKids()}
+function editKidCancel(id){editingKid.delete(id);renderKids()}
+function buildKidEditRow(e){
+  const row=document.createElement('div');row.className='edit-row';
+  const curOpt=c=>'<option value="'+c+'"'+(e.cur===c?' selected':'')+'>'+({THB:'฿ באט',ILS:'₪ שקל',USD:'$ דולר'}[c])+'</option>';
+  row.innerHTML='<label>עבור מי?</label><select id="ke-kid-'+e.id+'">'
+      +'<option value="arbel"'+(e.kid==='arbel'?' selected':'')+'>ארבל</option>'
+      +'<option value="yarden"'+(e.kid==='yarden'?' selected':'')+'>ירדן</option></select>'
+    +'<label>תיאור</label><input id="ke-desc-'+e.id+'" value="'+esc(e.desc)+'">'
+    +'<div class="row">'
+      +'<div><label>סכום</label><input type="number" id="ke-amt-'+e.id+'" inputmode="decimal" value="'+e.amt+'"></div>'
+      +'<div><label>מטבע</label><select id="ke-cur-'+e.id+'">'+['THB','ILS','USD'].map(curOpt).join('')+'</select></div>'
+    +'</div>'
+    +'<div class="row">'
+      +'<div><label>איך שולם</label><select id="ke-pay-'+e.id+'">'
+        +'<option value="cash"'+(e.pay==='cash'?' selected':'')+'>💵 מזומן</option>'
+        +'<option value="card"'+(e.pay==='card'?' selected':'')+'>💳 אשראי</option></select></div>'
+      +'<div><label>תאריך</label><input type="date" id="ke-date-'+e.id+'" value="'+e.date+'"></div>'
+    +'</div>'
+    +'<div class="rowbtns"><button class="btn small" onclick="editKidSave('+e.id+')">💾 שמירה</button>'
+    +'<button class="btn ghost small" onclick="editKidCancel('+e.id+')">ביטול</button></div>';
+  return row;
+}
+function editKidSave(id){
+  const e=kidExps.find(x=>x.id===id);if(!e)return;
+  const desc=document.getElementById('ke-desc-'+id).value.trim();
+  const amt=parseFloat(document.getElementById('ke-amt-'+id).value);
+  if(!desc||!amt||amt<=0){alert('צריך תיאור וסכום תקין');return}
+  e.kid=document.getElementById('ke-kid-'+id).value;
+  e.desc=desc;e.amt=amt;
+  e.cur=document.getElementById('ke-cur-'+id).value;
+  e.pay=document.getElementById('ke-pay-'+id).value;
+  const dateEl=document.getElementById('ke-date-'+id);
+  if(dateEl&&dateEl.value)e.date=dateEl.value;
+  editingKid.delete(id);
+  save('th_kid_exps',kidExps);
+  renderKids();renderMoney();
+}
+function addKidExp(){
+  const desc=document.getElementById('k-desc').value.trim();
+  const amt=parseFloat(document.getElementById('k-amt').value);
+  if(!desc||!amt||amt<=0){alert('צריך תיאור וסכום');return}
+  kidExps.push({id:Date.now(),kid:document.getElementById('k-kid').value,desc,amt,
+    cur:document.getElementById('k-cur').value,
+    pay:document.getElementById('k-pay').value,
+    date:document.getElementById('k-date').value||localDateStr()});
+  save('th_kid_exps',kidExps);
+  document.getElementById('k-desc').value='';document.getElementById('k-amt').value='';
+  renderKids();renderMoney();
+  showToast('✅ ההוצאה נרשמה');
+}
+function delKidExp(id){
+  if(!confirm('למחוק את ההוצאה?'))return;
+  kidExps=kidExps.filter(e=>e.id!==id);
+  editingKid.delete(id);
+  save('th_kid_exps',kidExps);
+  renderKids();renderMoney();
+}
 
 /* ================= CHECKLIST TAB ================= */
 function renderChecks(){
@@ -1246,8 +1539,49 @@ function renderCountdown(){
   }
 }
 
-function renderAll(){renderStrip();renderPlan();renderFlights();renderHotels();renderCars();renderMoney();renderChecks();renderCountdown();renderAttachments()}
+/* גיבוי ידני: מוריד את כל הנתונים (בלי הקבצים) כקובץ JSON — רשת ביטחון
+   למקרה ששני שירותי הענן החינמיים ייפלו. שחזור: שולחים לי את הקובץ. */
+function exportBackup(){
+  const blob=new Blob([JSON.stringify(buildCloudState(),null,2)],{type:'application/json'});
+  const u=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=u;a.download='thailand-trip-backup-'+localDateStr()+'.json';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),5000);
+}
+
+/* ===== רשת ביטחון: אף כפתור לא "נכשל בשקט" =====
+   כל כפתור בעמוד קורא לפונקציה גלובלית (onclick="addWd()" וכו'). אם משהו
+   בפנים זורק שגיאה בלתי-צפויה, בלי זה שום דבר לא קורה ולא רואים למה. כאן
+   עוטפים את כל הפונקציות שכפתורים קוראים להן כך שכל שגיאה תוצג במקום
+   להיבלע בשקט. */
+function guardAllButtonHandlers(){
+  const names=new Set();
+  document.querySelectorAll('[onclick]').forEach(el=>{
+    const m=(el.getAttribute('onclick')||'').match(/^\s*([A-Za-z_$][\w$]*)\s*\(/);
+    if(m)names.add(m[1]);
+  });
+  names.forEach(name=>{
+    const orig=window[name];
+    if(typeof orig!=='function'||orig.__guarded)return;
+    const wrapped=function(...args){
+      try{return orig.apply(this,args)}
+      catch(e){
+        console.error('שגיאה בלחיצה על כפתור ('+name+'):',e);
+        alert('משהו השתבש (בפעולה: '+name+').\nנסו שוב, ואם זה חוזר — שלחו צילום מסך.');
+      }
+    };
+    wrapped.__guarded=true;
+    window[name]=wrapped;
+  });
+}
+
+function renderAll(){renderStrip();renderPlan();renderFlights();renderHotels();renderCars();renderMoney();renderKids();renderChecks();renderCountdown();renderAttachments()}
 renderAll();
+guardAllButtonHandlers();
+window.addEventListener('error',e=>{
+  console.error('שגיאה כללית:',e.error||e.message);
+});
 /* קבצים מהגרסה הקודמת שנשמרו רק במכשיר — מועלים לענן אוטומטית,
    וקבצים חדשים מהענן יורדים למטמון המקומי של כל מכשיר */
 setTimeout(migrateLocalFiles,5000);
