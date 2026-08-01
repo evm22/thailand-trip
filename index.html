@@ -296,6 +296,22 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
   <h2 class="sec">מלונות 🏨</h2>
   <div id="hotelList"></div>
 
+  <h2 class="sec">רכב שכור 🚗</h2>
+  <div id="carList"></div>
+
+  <div class="card">
+    <h3>הוספת השכרת רכב</h3>
+    <label>חברה / תיאור</label>
+    <input id="cr-name" placeholder="Budget — שדה&quot;ת צ'אנג מאי">
+    <div class="row">
+      <div><label>איסוף</label><input type="date" id="cr-from" min="2026-08-07" max="2026-08-31"></div>
+      <div><label>החזרה</label><input type="date" id="cr-to" min="2026-08-07" max="2026-08-31"></div>
+    </div>
+    <label>הערות (סוג רכב, שעות, תוספות)</label>
+    <input id="cr-note" placeholder="רכב שטח אוטומטי · איסוף 11:00">
+    <div style="margin-top:12px"><button class="btn" onclick="addCar()">שמירת השכרה</button></div>
+  </div>
+
   <div class="card">
     <h3>הוספת מלון</h3>
     <label>שם המלון</label>
@@ -436,6 +452,7 @@ let exps=load('th_exps',[]);
 let wds=load('th_wds',[]);
 let rates=load('th_rates',{ILS_THB:9.5,USD_ILS:3.7});
 let dayPlans=load('th_dayplans',{});
+let cars=load('th_cars',[]);
 
 /* ================= CLOUD SYNC (גיבוי כפול — שני שירותים בלתי תלויים) =================
    כל שינוי נשמר בשני עותקים בענן; אם שירות אחד נופל או נמחק, השני ממשיך לעבוד
@@ -456,9 +473,9 @@ const FILE_POOL=[
   '23cb8767e87ff5701904','37ce824e616764f771c5','37f058d81116d9fd3b40','970713c5856720a8c843',
   '8778ac42f73f2febd951'
 ].map(id=>'https://api.npoint.io/'+id);
-const CLOUD_KEYS=['th_hotels_v2','th_flights_v2','th_checks_v2','th_exps','th_wds','th_rates','th_dayplans'];
+const CLOUD_KEYS=['th_hotels_v2','th_flights_v2','th_checks_v2','th_exps','th_wds','th_rates','th_dayplans','th_cars'];
 function getLocalVar(key){
-  return {th_hotels_v2:hotels,th_flights_v2:flights,th_checks_v2:checks,th_exps:exps,th_wds:wds,th_rates:rates,th_dayplans:dayPlans}[key];
+  return {th_hotels_v2:hotels,th_flights_v2:flights,th_checks_v2:checks,th_exps:exps,th_wds:wds,th_rates:rates,th_dayplans:dayPlans,th_cars:cars}[key];
 }
 function setLocalVar(key,val){
   if(key==='th_hotels_v2')hotels=val;
@@ -468,6 +485,7 @@ function setLocalVar(key,val){
   else if(key==='th_wds')wds=val;
   else if(key==='th_rates')rates=val;
   else if(key==='th_dayplans')dayPlans=val;
+  else if(key==='th_cars')cars=val;
 }
 function buildCloudState(){
   const o={};CLOUD_KEYS.forEach(k=>o[k]=getLocalVar(k));return o;
@@ -633,6 +651,10 @@ function renderPlan(){
     flightsToday.forEach(f=>metaParts.push('✈️ '+f.from+' ← '+f.to+(f.time?' · '+f.time:'')));
     if(checkIn)metaParts.push('🏨 צ\'ק-אין: '+checkIn.name);
     if(checkOut&&!checkIn)metaParts.push('🏨 צ\'ק-אאוט: '+checkOut.name);
+    cars.forEach(c=>{
+      if(c.from===ds)metaParts.push('🚗 איסוף רכב: '+c.name);
+      if(c.to===ds)metaParts.push('🚗 החזרת רכב: '+c.name);
+    });
     if(!city&&!flightsToday.length)metaParts.push('⚠️ אין לינה מוזמנת');
 
     const hasPlan=dp.morning||dp.noon||dp.evening;
@@ -723,6 +745,37 @@ function addHotel(){
   renderAll();
 }
 function delHotel(id){if(confirm('למחוק את המלון?')){hotels=hotels.filter(h=>h.id!==id);save('th_hotels_v2',hotels);renderAll()}}
+
+/* ================= CAR RENTALS ================= */
+function renderCars(){
+  const el=document.getElementById('carList');el.innerHTML='';
+  if(!cars.length){
+    el.innerHTML='<div class="card"><div class="meta">אין השכרות רכב עדיין — אפשר להוסיף למטה 🚗</div></div>';
+    return;
+  }
+  [...cars].sort((a,b)=>a.from<b.from?-1:1).forEach(c=>{
+    const days=nights(c.from,c.to);
+    const cd=document.createElement('div');cd.className='card';
+    cd.innerHTML='<div class="tagline">🚗 השכרת רכב · '+days+' ימים</div>'
+      +'<h3>'+esc(c.name)+'</h3>'
+      +'<div class="meta">'+fmt(c.from)+' – '+fmt(c.to)+(c.note?' · '+esc(c.note):'')+'</div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">'
+      +'<span class="badge ok">מאושר ✓</span>'
+      +'<button class="del" onclick="delCar('+c.id+')">✕</button></div>'
+      +attBlock('car',c);
+    el.appendChild(cd);
+  });
+}
+function addCar(){
+  const name=document.getElementById('cr-name').value.trim();
+  const from=document.getElementById('cr-from').value,to=document.getElementById('cr-to').value;
+  if(!name||!from||!to||to<=from){alert('צריך שם ותאריכים תקינים (החזרה אחרי איסוף)');return}
+  cars.push({id:Date.now(),name,from,to,note:document.getElementById('cr-note').value.trim(),links:[],files:[]});
+  save('th_cars',cars);
+  document.getElementById('cr-name').value='';document.getElementById('cr-note').value='';
+  renderAll();
+}
+function delCar(id){if(confirm('למחוק את ההשכרה?')){cars=cars.filter(c=>c.id!==id);save('th_cars',cars);renderAll()}}
 
 /* ================= MONEY TAB ================= */
 function toILS(e){
@@ -879,11 +932,12 @@ function idbDel(fid){return new Promise(res=>{
 function findItem(itemKey){
   const sep=itemKey.indexOf('_');
   const kind=itemKey.slice(0,sep),id=itemKey.slice(sep+1);
-  const arr=kind==='hotel'?hotels:flights;
+  const arr=kind==='hotel'?hotels:(kind==='car'?cars:flights);
   return arr.find(x=>String(x.id)===id);
 }
 function saveItemArr(itemKey){
   if(itemKey.startsWith('hotel'))save('th_hotels_v2',hotels);
+  else if(itemKey.startsWith('car'))save('th_cars',cars);
   else save('th_flights_v2',flights);
 }
 function fileToB64(f){return new Promise((res,rej)=>{
@@ -919,7 +973,7 @@ function compressImage(f){return new Promise(res=>{
 })}
 function usedBins(){
   const s=new Set();
-  [...hotels,...flights].forEach(it=>(it.files||[]).forEach(f=>f.bin&&s.add(f.bin)));
+  [...hotels,...flights,...cars].forEach(it=>(it.files||[]).forEach(f=>f.bin&&s.add(f.bin)));
   return s;
 }
 function freeBin(){
@@ -966,12 +1020,46 @@ document.getElementById('attFileInput').addEventListener('change',async e=>{
   }
   renderAttachments(itemKey);
 });
-function openBlob(blob){
+/* פתיחת קבצים: בטלפון — דף שיתוף מקורי (עובד גם באייפון, שם דפדפנים חוסמים
+   פתיחת חלון חדש מקוד); אם אין/נכשל — מציג מובנה בתוך הדף. במחשב — טאב חדש. */
+const _IS_MOBILE=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+function openFileBlob(blob,name){
+  const type=blob.type||'application/octet-stream';
+  if(_IS_MOBILE){
+    let file=null;
+    try{file=new File([blob],name||'file',{type})}catch(e){}
+    if(file&&navigator.canShare&&navigator.canShare({files:[file]})&&navigator.share){
+      navigator.share({files:[file],title:name}).catch(err=>{
+        if(!err||err.name!=='AbortError')viewFileOverlay(blob,name);
+      });
+      return;
+    }
+    viewFileOverlay(blob,name);
+    return;
+  }
   const u=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=u;a.target='_blank';a.rel='noopener';
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(u),120000);
+}
+function viewFileOverlay(blob,name){
+  const u=URL.createObjectURL(blob);
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(10,25,22,.92);z-index:300;display:flex;flex-direction:column';
+  const bar=document.createElement('div');
+  bar.style.cssText='padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;color:#fff;font-weight:700';
+  const ttl=document.createElement('span');
+  ttl.style.cssText='overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+  ttl.textContent=name||'קובץ';
+  const cls=document.createElement('button');
+  cls.className='btn small';cls.style.width='auto';cls.textContent='✕ סגירה';
+  cls.onclick=()=>{ov.remove();URL.revokeObjectURL(u)};
+  bar.appendChild(ttl);bar.appendChild(cls);
+  const frame=document.createElement('iframe');
+  frame.src=u;frame.style.cssText='flex:1;border:0;background:#fff';
+  ov.appendChild(bar);ov.appendChild(frame);
+  document.body.appendChild(ov);
 }
 /* פתיחת קובץ ענן: קודם מהמטמון המקומי, אחרת מורידים מהענן ושומרים במטמון */
 async function attOpenCloud(itemKey,fileId){
@@ -979,24 +1067,21 @@ async function attOpenCloud(itemKey,fileId){
   const it=findItem(itemKey);
   const entry=it?(it.files||[]).find(x=>x.id===fileId):null;
   if(!entry)return;
-  const cached=await idbGet('c_'+fileId);
-  if(cached&&cached.blob){openBlob(cached.blob);return}
-  const w=window.open('','_blank');
-  if(w){try{w.document.write('<p style="font-family:sans-serif;text-align:center;margin-top:40px">⏳ מוריד את הקובץ מהענן…</p>')}catch(e){}}
-  try{
-    const r=await fetch(entry.bin);
-    if(!r.ok)throw new Error('http '+r.status);
-    const j=await r.json();
-    if(!j||!j.data)throw new Error('empty');
-    const blob=b64ToBlob(j.data,j.type||entry.type);
-    await idbPut({fid:'c_'+fileId,itemKey,name:entry.name,type:entry.type,blob,added:Date.now()});
-    const u=URL.createObjectURL(blob);
-    if(w)w.location=u;else openBlob(blob);
-    setTimeout(()=>URL.revokeObjectURL(u),120000);
-  }catch(err){
-    if(w){try{w.close()}catch(e){}}
-    alert('לא הצלחנו להוריד את הקובץ מהענן — בדקו אינטרנט ונסו שוב');
+  let rec=await idbGet('c_'+fileId);
+  if(!rec||!rec.blob){
+    try{
+      const r=await fetch(entry.bin);
+      if(!r.ok)throw new Error('http '+r.status);
+      const j=await r.json();
+      if(!j||!j.data)throw new Error('empty');
+      rec={name:entry.name,blob:b64ToBlob(j.data,j.type||entry.type)};
+      await idbPut({fid:'c_'+fileId,itemKey,name:entry.name,type:entry.type,blob:rec.blob,added:Date.now()});
+    }catch(err){
+      alert('לא הצלחנו להוריד את הקובץ מהענן — בדקו אינטרנט ונסו שוב');
+      return;
+    }
   }
+  openFileBlob(rec.blob,entry.name);
 }
 async function attDelCloud(itemKey,fileId){
   if(!confirm('למחוק את הקובץ מכל המכשירים?'))return;
@@ -1013,7 +1098,7 @@ async function attDelCloud(itemKey,fileId){
 async function attOpen(fid){
   const rec=await idbGet(fid);
   if(!rec){alert('הקובץ שמור במכשיר אחר — פתחו אותו שם, או הוסיפו קישור במקום');return}
-  openBlob(rec.blob);
+  openFileBlob(rec.blob,rec.name);
 }
 async function attDelFile(fid,itemKey){
   if(!confirm('למחוק את הקובץ?'))return;
@@ -1062,7 +1147,7 @@ async function cacheCloudFiles(){
   try{
     await filesDBReady;
     if(!filesDB)return;
-    const items=[...hotels.map(h=>({key:'hotel_'+h.id,it:h})),...flights.map(f=>({key:'flight_'+f.id,it:f}))];
+    const items=[...hotels.map(h=>({key:'hotel_'+h.id,it:h})),...flights.map(f=>({key:'flight_'+f.id,it:f})),...cars.map(c=>({key:'car_'+c.id,it:c}))];
     for(const {key,it} of items){
       for(const e of (it.files||[])){
         if(await idbGet('c_'+e.id))continue;
@@ -1161,7 +1246,7 @@ function renderCountdown(){
   }
 }
 
-function renderAll(){renderStrip();renderPlan();renderFlights();renderHotels();renderMoney();renderChecks();renderCountdown();renderAttachments()}
+function renderAll(){renderStrip();renderPlan();renderFlights();renderHotels();renderCars();renderMoney();renderChecks();renderCountdown();renderAttachments()}
 renderAll();
 /* קבצים מהגרסה הקודמת שנשמרו רק במכשיר — מועלים לענן אוטומטית,
    וקבצים חדשים מהענן יורדים למטמון המקומי של כל מכשיר */
