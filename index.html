@@ -133,6 +133,17 @@ nav{position:fixed;bottom:0;right:0;left:0;z-index:50;background:#fff;border-top
 nav button{background:none;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:10px;font-weight:700;color:var(--muted);padding:4px 6px;border-radius:12px;transition:background .12s,color .12s}
 nav button .ic{font-size:19px}
 .placecard iframe{width:100%;height:160px;border:0;border-radius:14px;display:block;margin-top:10px}
+.poi-section{margin-top:12px;padding-top:12px;border-top:1px dashed #E2E9E7}
+.poi-heading{font-size:14px;font-weight:700;color:var(--jungle);margin-bottom:8px}
+.poi-item{display:flex;align-items:center;gap:10px;background:var(--sand);border-radius:12px;padding:9px 12px;margin-bottom:7px}
+.poi-info{flex:1;min-width:0}
+.poi-name{font-weight:700;font-size:14px;color:var(--ink)}
+.poi-desc{font-size:12.5px;color:var(--muted);margin-top:1px}
+.poi-btns{display:flex;gap:6px;flex:0 0 auto}
+.poi-btn{width:32px;height:32px;border-radius:50%;font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid #D8E2DF;color:var(--muted);flex:0 0 auto}
+.poi-btn.yes.active{background:var(--emerald-soft);border-color:var(--emerald);color:var(--emerald)}
+.poi-btn.no.active{background:var(--coral-soft);border-color:var(--coral);color:var(--coral)}
+.poi-empty{font-size:13px;color:var(--muted);padding:4px 2px}
 nav button.active{color:var(--emerald);background:var(--emerald-soft)}
 .attwrap{margin-top:10px;border-top:1px dashed #E2E9E7;padding-top:8px}
 .attwrap summary{cursor:pointer;list-style:none;font-size:13.5px;font-weight:700;color:var(--emerald);display:flex;align-items:center;gap:6px}
@@ -347,6 +358,7 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
     <div class="tipline" style="border:none;padding-top:0;margin-top:4px">💡 <span><b>טיפ מקומי:</b> תכננו זמן לפקקים בשעות העומס — הרכבת הקלה (BTS/MRT) לרוב מהירה ונוחה יותר.</span></div>
     <iframe loading="lazy" src="https://maps.google.com/maps?q=Bangkok,Thailand&t=&z=11&ie=UTF8&iwloc=&output=embed"></iframe>
     <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Bangkok%2C%20Thailand" target="_blank" rel="noopener">📍 פתח ב-Google Maps</a>
+    <div class="poi-section"><h4 class="poi-heading">🎯 כדאי לעשות (עם ילדים)</h4><div class="poi-list" id="poi-list-bkk"></div></div>
   </div>
   <div class="card placecard">
     <div class="tagline">צ'אנג מאי</div>
@@ -354,6 +366,7 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
     <div class="tipline" style="border:none;padding-top:0;margin-top:4px">💡 <span><b>טיפ מקומי:</b> לילות קרירים יחסית בהרים; שוק הלילה בוואלקינג סטריט (שישי-שבת) שווה זמן.</span></div>
     <iframe loading="lazy" src="https://maps.google.com/maps?q=Chiang+Mai,Thailand&t=&z=11&ie=UTF8&iwloc=&output=embed"></iframe>
     <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Chiang%20Mai%2C%20Thailand" target="_blank" rel="noopener">📍 פתח ב-Google Maps</a>
+    <div class="poi-section"><h4 class="poi-heading">🎯 כדאי לעשות (עם ילדים)</h4><div class="poi-list" id="poi-list-cnx"></div></div>
   </div>
   <div class="card placecard">
     <div class="tagline">צ'אנג ראי</div>
@@ -361,6 +374,7 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
     <div class="tipline" style="border:none;padding-top:0;margin-top:4px">💡 <span><b>טיפ מקומי:</b> המקדש הלבן (וואט רונג חון) הכי נעים מוקדם בבוקר, לפני האוטובוסים המאורגנים.</span></div>
     <iframe loading="lazy" src="https://maps.google.com/maps?q=Chiang+Rai,Thailand&t=&z=11&ie=UTF8&iwloc=&output=embed"></iframe>
     <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Chiang%20Rai%2C%20Thailand" target="_blank" rel="noopener">📍 פתח ב-Google Maps</a>
+    <div class="poi-section"><h4 class="poi-heading">🎯 כדאי לעשות (עם ילדים)</h4><div class="poi-list" id="poi-list-cri"></div></div>
   </div>
   <div class="card placecard">
     <div class="tagline">קראבי</div>
@@ -368,6 +382,7 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
     <div class="tipline" style="border:none;padding-top:0;margin-top:4px">💡 <span><b>טיפ מקומי:</b> סירות longtail לאיים מתמלאות מהר בעונה — כדאי להזמין מקום יום מראש.</span></div>
     <iframe loading="lazy" src="https://maps.google.com/maps?q=Krabi,Thailand&t=&z=11&ie=UTF8&iwloc=&output=embed"></iframe>
     <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Krabi%2C%20Thailand" target="_blank" rel="noopener">📍 פתח ב-Google Maps</a>
+    <div class="poi-section"><h4 class="poi-heading">🎯 כדאי לעשות (עם ילדים)</h4><div class="poi-list" id="poi-list-kbi"></div></div>
   </div>
   <div class="card placecard">
     <div class="tagline">פוקט</div>
@@ -375,6 +390,7 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
     <div class="tipline" style="border:none;padding-top:0;margin-top:4px">💡 <span><b>טיפ מקומי:</b> אוגוסט הוא עונת מונסון — גלים חזקים יותר בחוף המערבי, בדקו דגלי אזהרה לפני שחייה.</span></div>
     <iframe loading="lazy" src="https://maps.google.com/maps?q=Phuket,Thailand&t=&z=11&ie=UTF8&iwloc=&output=embed"></iframe>
     <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Phuket%2C%20Thailand" target="_blank" rel="noopener">📍 פתח ב-Google Maps</a>
+    <div class="poi-section"><h4 class="poi-heading">🎯 כדאי לעשות (עם ילדים)</h4><div class="poi-list" id="poi-list-hkt"></div></div>
   </div>
 </section>
 
@@ -436,6 +452,7 @@ let dayPlans=load('th_dayplans',{});
 let cars=load('th_cars',[]);
 let kidExps=load('th_kid_exps',[]);
 let weatherCache=load('th_weather_cache',{});
+let poiState=load('th_poi_state',{});
 
 const SYNC_BACKENDS=[
   {url:'https://api.npoint.io/d51477288f3c722bd2f9',method:'POST'},
@@ -450,12 +467,13 @@ const FILE_POOL=[
   '23cb8767e87ff5701904','37ce824e616764f771c5','37f058d81116d9fd3b40','970713c5856720a8c843',
   '8778ac42f73f2febd951'
 ].map(id=>'https://api.npoint.io/'+id);
-const CLOUD_KEYS=['th_hotels_v2','th_flights_v2','th_checks_v2','th_exps','th_wds','th_rates','th_dayplans','th_cars','th_kid_exps'];
-function getLocalVar(key){return {th_hotels_v2:hotels,th_flights_v2:flights,th_checks_v2:checks,th_exps:exps,th_wds:wds,th_rates:rates,th_dayplans:dayPlans,th_cars:cars,th_kid_exps:kidExps}[key]}
+const CLOUD_KEYS=['th_hotels_v2','th_flights_v2','th_checks_v2','th_exps','th_wds','th_rates','th_dayplans','th_cars','th_kid_exps','th_poi_state'];
+function getLocalVar(key){return {th_hotels_v2:hotels,th_flights_v2:flights,th_checks_v2:checks,th_exps:exps,th_wds:wds,th_rates:rates,th_dayplans:dayPlans,th_cars:cars,th_kid_exps:kidExps,th_poi_state:poiState}[key]}
 function setLocalVar(key,val){
   if(key==='th_hotels_v2')hotels=val;else if(key==='th_flights_v2')flights=val;else if(key==='th_checks_v2')checks=val;
   else if(key==='th_exps')exps=val;else if(key==='th_wds')wds=val;else if(key==='th_rates')rates=val;
   else if(key==='th_dayplans')dayPlans=val;else if(key==='th_cars')cars=val;else if(key==='th_kid_exps')kidExps=val;
+  else if(key==='th_poi_state')poiState=val;
 }
 function buildCloudState(){const o={};CLOUD_KEYS.forEach(k=>o[k]=getLocalVar(k));return o}
 function setSyncStatus(txt,cls){const el=document.getElementById('syncStatus');if(el){el.textContent=txt;el.className='syncbadge '+(cls||'')}}
@@ -533,6 +551,131 @@ function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 function getDayPlan(ds){return dayPlans[ds]||{morning:'',noon:'',evening:''}}
 function saveDayPlanField(ds,field,val){if(!dayPlans[ds])dayPlans[ds]={morning:'',noon:'',evening:''};dayPlans[ds][field]=val;save('th_dayplans',dayPlans)}
 function mapUrl(q){return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
+
+/* ================= POI — "כדאי לעשות" לכל עיר =================
+   מאגר יעדים לכל עיר (מותאם למשפחה עם ילדים). מציגים תמיד עד POI_DISPLAY
+   יעדים; ✓ מסמן "רוצים" (נשאר ברשימה, רק מודגש), ✕ מסיר לצמיתות ומכניס
+   במקומו את היעד הבא מהמאגר — כך שהרשימה תמיד מתמלאת מחדש. */
+const POI_DISPLAY=8;
+const POI_POOL={
+  bkk:[
+    {id:'bkk1',name:'הארמון הגדול ווואט פרה קאיאו',desc:'המתחם המפואר והמפורסם ביותר בבנגקוק — כדאי להגיע בבוקר מוקדם'},
+    {id:'bkk2',name:'וואט ארון (מקדש השחר)',desc:'מקדש מרשים על גדת הנהר, יפה במיוחד בשעת שקיעה'},
+    {id:'bkk3',name:'וואט פו',desc:'מקדש הבודהה השוכב הענק, סמוך לארמון הגדול'},
+    {id:'bkk4',name:'שוק ג׳טוג׳אק (Chatuchak)',desc:'שוק הסופ״ש הענק בעולם — אלפי דוכנים, כדאי נעליים נוחות'},
+    {id:'bkk5',name:'שיט בנהר צ׳או פראיה',desc:'סיפון לילי או יומי עם נוף מרהיב לעיר מהמים'},
+    {id:'bkk6',name:'ספארי וורלד ומארין פארק',desc:'פארק ספארי גדול עם מופעי דולפינים — אהוב במיוחד על ילדים'},
+    {id:'bkk7',name:'Sea Life Bangkok Ocean World',desc:'אקווריום ענק מתחת לקניון סיאם פרגון'},
+    {id:'bkk8',name:'Kidzania בנגקוק',desc:'עיר תפקידים אינטראקטיבית לילדים בקניון סיאם פרגון'},
+    {id:'bkk9',name:'שוק הצף דמנואן סדואק',desc:'שוק מסורתי על סירות — טיול יום מבנגקוק'},
+    {id:'bkk10',name:'אסיאטיק דה ריברפרונט',desc:'קניון פתוח על הנהר עם גלגל ענק ומופעים בערב'},
+    {id:'bkk11',name:'גן החיות דוסיט (חאו דין)',desc:'גן חיות עירוני נעים, מתאים לילדים קטנים'},
+    {id:'bkk12',name:'פארק לומפיני',desc:'ריאה ירוקה בלב העיר — אפשר לשכור סירת דוושות'},
+    {id:'bkk13',name:'רחוב חאו סאן (Khao San Road)',desc:'הרחוב התוסס של המטיילים — אווירה ושווקי רחוב'},
+    {id:'bkk14',name:'מוזיאון המדע והפלנטריום',desc:'תצוגות אינטראקטיביות ומדעיות, כיף לילדים'}
+  ],
+  cnx:[
+    {id:'cnx1',name:'מקדש דוי סוטפ',desc:'מקדש ההר האייקוני עם נוף פנורמי לעיר'},
+    {id:'cnx2',name:'חוות פילים אתית',desc:'צפייה, האכלה ורחצת פילים ללא רכיבה'},
+    {id:'cnx3',name:'וואט צ׳די לואנג',desc:'מקדש עתיק עם סטופה גדולה בעיר העתיקה'},
+    {id:'cnx4',name:'וואט פרה סינג',desc:'אחד המקדשים החשובים והיפים בעיר העתיקה'},
+    {id:'cnx5',name:'שוק הלילה — וואלקינג סטריט',desc:'שווקי רחוב, אוכל ומלאכת יד בסופ״ש'},
+    {id:'cnx6',name:'Chiang Mai Night Safari',desc:'ספארי לילי בג׳יפ עם צפייה בבעלי חיים'},
+    {id:'cnx7',name:'מפלי בואה טונג (Sticky Waterfalls)',desc:'מפלים ייחודיים שאפשר לטפס עליהם בלי להחליק'},
+    {id:'cnx8',name:'גן חיות צ׳אנג מאי והפנדות',desc:'גן חיות גדול עם הפנדות היחידות בתאילנד'},
+    {id:'cnx9',name:'פארק המים Grand Canyon',desc:'קניון מים עם קיאקים, קפיצות וצלילה'},
+    {id:'cnx10',name:'X-Centre צ׳אנג מאי',desc:'פארק זיפליין והרפתקאות לכל המשפחה'},
+    {id:'cnx11',name:'כפר המלאכה באן טוואי',desc:'כפר קניות למלאכת יד מקומית ועץ'},
+    {id:'cnx12',name:'אלפנט ג׳ונגל סנקצ׳ורי',desc:'מקלט פילים נוסף עם טרק קצר ביער'},
+    {id:'cnx13',name:'תצוגת פרפרים ואינסקטריום',desc:'תצוגה מרתקת לילדים בעיר העתיקה'},
+    {id:'cnx14',name:'רפטינג קליל בנהר מאי טאנג',desc:'רפטינג משפחתי נעים בנהר סמוך'}
+  ],
+  cri:[
+    {id:'cri1',name:'וואט רונג חון (המקדש הלבן)',desc:'יצירת אמנות מודרנית מדהימה, ייחודית בעולם'},
+    {id:'cri2',name:'וואט רונג סואה טן (המקדש הכחול)',desc:'מקדש כחול צבעוני ומרשים לצילום'},
+    {id:'cri3',name:'באן דאם (בית השחור)',desc:'מוזיאון אמנות יוצא דופן של אמן מקומי'},
+    {id:'cri4',name:'המשולש הזהב',desc:'נקודת מפגש גבולות תאילנד-לאוס-מיאנמר על הנהר'},
+    {id:'cri5',name:'סינגהה פארק',desc:'פארק תה ירוק ענק עם רכבל, ספארי וחוות בעלי חיים'},
+    {id:'cri6',name:'וואט הואי פלה קאנג',desc:'פסל גואנין הלבן הענק עם נוף פנורמי'},
+    {id:'cri7',name:'שוק הלילה של צ׳אנג ראי',desc:'שוק רחוב תוסס עם אוכל ומופעים'},
+    {id:'cri8',name:'מטעי התה צ׳ואי פונג',desc:'סיור בין שדות תה ירוקים עם בית קפה נוף'},
+    {id:'cri9',name:'פארק התרבות מאה פאה לואנג',desc:'גן בודהיסטי שקט עם פסלים ואגם'},
+    {id:'cri10',name:'דוי מאה סלונג',desc:'כפר הרים סיני עם נוף ומטעי תה בגובה'},
+    {id:'cri11',name:'מערת טהאם לואנג (מבחוץ)',desc:'המערה המפורסמת מסיפור חילוץ הילדים'},
+    {id:'cri12',name:'חוות תותי שדה (עונתי)',desc:'קטיף תותים עונתי — כיף לילדים'},
+    {id:'cri13',name:'גשר הבמבוק וכפרים שבטיים',desc:'ביקור בכפרי מיעוטים הרריים'},
+    {id:'cri14',name:'פארק ציפורים ופרפרים מקומי',desc:'תצוגת חי קטנה ונעימה למשפחות'}
+  ],
+  kbi:[
+    {id:'kbi1',name:'חוף ריילי (Railay Beach)',desc:'חוף מדהים מוקף צוקי אבן גיר — נגיש רק בסירה'},
+    {id:'kbi2',name:'חוף אאו נאנג',desc:'חוף ראשי עם מגוון מסעדות ופעילויות מים'},
+    {id:'kbi3',name:'הברכה האזמרגד (Sa Morakot)',desc:'בריכת מעיין טבעית בצבע ירוק-טורקיז ביער'},
+    {id:'kbi4',name:'מקדש מערת הנמר (Wat Tham Sua)',desc:'טיפוס למקדש בפסגה עם נוף מרהיב'},
+    {id:'kbi5',name:'סיור ארבעת האיים',desc:'שיט longtail לחופים, מערות ושנורקלינג'},
+    {id:'kbi6',name:'שוק הלילה של קראבי',desc:'שוק אוכל ורחוב תוסס בעיר'},
+    {id:'kbi7',name:'פארק הזיפליין של קראבי',desc:'הרפתקאות אוויר וחבלים לכל המשפחה'},
+    {id:'kbi8',name:'בית הקברות של הצדפות (Susan Hoi)',desc:'תצוגת מאובנים ייחודית על החוף'},
+    {id:'kbi9',name:'מעיינות חמים — קלונג תום',desc:'בריכות טבעיות מחוממות ביער'},
+    {id:'kbi10',name:'חוף טונסאי וחוף פרה נאנג',desc:'חופים סמוכים לריילי, שקטים ויפים'},
+    {id:'kbi11',name:'מסלול הקופים באאו נאנג',desc:'הליכה קצרה עם קופים חופשיים בטבע'},
+    {id:'kbi12',name:'אי צ׳יקן (Chicken Island)',desc:'עצירת שנורקלינג פופולרית בסיורי הסירות'},
+    {id:'kbi13',name:'עמק הפילים של קראבי',desc:'מקלט פילים אתי לצפייה והאכלה'},
+    {id:'kbi14',name:'הטיילת ורחוב האוכל של אאו נאנג',desc:'מסעדות וברים לאורך החוף הראשי'}
+  ],
+  hkt:[
+    {id:'hkt1',name:'הבודהה הגדול (Big Buddha)',desc:'פסל ענק על גבעה עם נוף 360 מעלות לאי'},
+    {id:'hkt2',name:'וואט צ׳לונג',desc:'המקדש החשוב והמפואר ביותר בפוקט'},
+    {id:'hkt3',name:'פוקט טאון העתיקה',desc:'רחובות סינו-פורטוגזים צבעוניים, קפה ואמנות רחוב'},
+    {id:'hkt4',name:'חוף קאטה',desc:'חוף משפחתי נעים עם גלים עדינים יחסית'},
+    {id:'hkt5',name:'סיור לאיי פיפי',desc:'טיול יום בסירה למים טורקיז ומערות מפורסמות'},
+    {id:'hkt6',name:'אקווריום פוקט',desc:'אקווריום קטן ונעים למשפחות עם ילדים'},
+    {id:'hkt7',name:'תצפית חאו רנג (Monkey Hill)',desc:'נוף פנורמי לעיר ולנמל, עם קופים'},
+    {id:'hkt8',name:'חוף קרון',desc:'חוף רחב ושקט — טוב לשקיעה'},
+    {id:'hkt9',name:'סיור לאי ג׳יימס בונד (פאנג נגה)',desc:'שיט בין צוקי אבן גיר מפורסמים מהסרט'},
+    {id:'hkt10',name:'שוק הלילה צ׳ילווה',desc:'שוק רחוב פופולרי עם אוכל ומוזיקה'},
+    {id:'hkt11',name:'וואט פרה תונג',desc:'מקדש עם פסל בודהה חצי-קבור, לפי אגדה מקומית'},
+    {id:'hkt12',name:'פארק פרפרים ואקווריום נוסף',desc:'חממת פרפרים צבעונית, כיף לילדים'},
+    {id:'hkt13',name:'חוף מאי קאו',desc:'חוף שקט וארוך בצפון האי, פחות תיירותי'},
+    {id:'hkt14',name:'חוף בנגטאו',desc:'חוף שקט וארוך בצפון-מערב האי'}
+  ]
+};
+function poiVisible(code){
+  const st=poiState[code]||{};
+  const rejected=st.rejected||[];
+  return (POI_POOL[code]||[]).filter(p=>rejected.indexOf(p.id)===-1).slice(0,POI_DISPLAY);
+}
+function renderPOICity(code){
+  const el=document.getElementById('poi-list-'+code);
+  if(!el)return;
+  const st=poiState[code]||{};
+  const confirmed=st.confirmed||[];
+  const list=poiVisible(code);
+  if(!list.length){el.innerHTML='<div class="poi-empty">עברתם על כל ההצעות כאן 🙂</div>';return}
+  el.innerHTML=list.map(p=>
+    '<div class="poi-item">'
+      +'<div class="poi-info"><div class="poi-name">'+esc(p.name)+'</div><div class="poi-desc">'+esc(p.desc)+'</div></div>'
+      +'<div class="poi-btns">'
+        +'<button class="poi-btn yes'+(confirmed.indexOf(p.id)>-1?' active':'')+'" onclick="poiMark(\''+code+'\',\''+p.id+'\',\'yes\')">✓</button>'
+        +'<button class="poi-btn no" onclick="poiMark(\''+code+'\',\''+p.id+'\',\'no\')">✕</button>'
+      +'</div>'
+    +'</div>'
+  ).join('');
+}
+function renderPOI(){Object.keys(POI_POOL).forEach(renderPOICity)}
+function poiMark(code,id,type){
+  const st=poiState[code]||(poiState[code]={confirmed:[],rejected:[]});
+  if(!st.confirmed)st.confirmed=[];
+  if(!st.rejected)st.rejected=[];
+  if(type==='no'){
+    if(st.rejected.indexOf(id)===-1)st.rejected.push(id);
+    st.confirmed=st.confirmed.filter(x=>x!==id);
+  }else{
+    const i=st.confirmed.indexOf(id);
+    if(i>-1)st.confirmed.splice(i,1);else st.confirmed.push(id);
+  }
+  save('th_poi_state',poiState);
+  renderPOICity(code);
+}
 
 /* ---- weather (Open-Meteo, no key) ---- */
 function wIcon(code){
@@ -1277,7 +1420,7 @@ function guardAllButtonHandlers(){
   });
 }
 
-function renderAll(){renderStrip();renderPlan();renderFlights();renderHotels();renderCars();renderMoney();renderKids();renderChecks();renderCountdown();renderAttachments()}
+function renderAll(){renderStrip();renderPlan();renderFlights();renderHotels();renderCars();renderMoney();renderKids();renderChecks();renderCountdown();renderAttachments();renderPOI()}
 
 const APP_PIN='1971';
 function checkPin(){
@@ -1298,7 +1441,7 @@ else{document.body.classList.add('locked')}
 const _exportNames=['checkPin','go','toggleAllDays','goToDay','addFlight','delFlight','addHotel','delHotel','addCar','delCar',
   'addExp','addWd','delWd','editWdStart','editWdCancel','editWdSave','delExp','editExpStart','editExpCancel','editExpSave',
   'addKidExp','delKidExp','editKidStart','editKidCancel','editKidSave','addChk','togChk','delChk',
-  'attAddFile','attAddLink','attDelLink','attDelCloud','attOpenCloud','attOpen','attDelFile','exportBackup','saveDayPlanField','shareTrip'];
+  'attAddFile','attAddLink','attDelLink','attDelCloud','attOpenCloud','attOpen','attDelFile','exportBackup','saveDayPlanField','shareTrip','poiMark'];
 _exportNames.forEach(n=>{try{window[n]=eval(n)}catch(e){}});
 
 /* חשוב: מפעילים את ה"מגן" (guardAllButtonHandlers) *לפני* שכפתורים קבועים
