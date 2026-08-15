@@ -488,6 +488,13 @@ document.addEventListener('focusout',e=>{
 });
 function setSyncOk(){const t=new Date();setSyncStatus('☁️ מסונכרן · '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0'),'ok')}
 function isEmptyVal(v){if(v==null)return true;if(Array.isArray(v))return v.length===0;if(typeof v==='object')return Object.keys(v).length===0;return false}
+function isSuspiciousShrink(cv,local){
+  /* מגן מפני מכשיר "מפגר" (שהיה אופליין / דפדפן שנוקה) שדוחף החוצה עותק קטן משלו
+     ומוחק בשקט נתונים של כולם. מחיקה אמיתית באפליקציה תמיד מסירה פריט אחד בכל פעם
+     (עם confirm()), אז ירידה של פריט אחד היא לגיטימית — ירידה של 2+ פריטים בבת אחת
+     היא סימן לאובדן נתונים, לא למחיקה מכוונת, ונדחית. */
+  return Array.isArray(cv)&&Array.isArray(local)&&cv.length<local.length-1;
+}
 let lastSyncedJSON='';let pushTimer=null;
 function pushToCloud(){
   clearTimeout(pushTimer);
@@ -498,13 +505,18 @@ function pushToCloud(){
   },600);
 }
 function applyCloud(data){
-  let changed=false,needPush=false;
+  let changed=false,needPush=false,blocked=false;
   CLOUD_KEYS.forEach(k=>{
     const local=getLocalVar(k);const cv=data?data[k]:undefined;
+    if(cv!==undefined&&isSuspiciousShrink(cv,local)){
+      console.warn('⚠️ נחסם עדכון ענן חשוד עבור '+k+': ענן='+cv.length+' פריטים, מקומי='+local.length+' — דוחף בחזרה את הגרסה המקומית');
+      blocked=true;needPush=true;return;
+    }
     if(cv!==undefined&&!(isEmptyVal(cv)&&!isEmptyVal(local))){
       if(JSON.stringify(cv)!==JSON.stringify(local)){persistLocal(k,cv);setLocalVar(k,cv);changed=true}
     }else if(!isEmptyVal(local)){needPush=true}
   });
+  if(blocked)setSyncStatus('🛡️ נחסמה מחיקה חשודה בענן — משחזר','warn');
   if(changed){safeRenderAll();setTimeout(cacheCloudFiles,1500)}
   if(needPush)pushToCloud();
 }
