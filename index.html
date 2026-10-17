@@ -79,7 +79,7 @@ h2.sec{font-size:22px;margin:16px 2px 10px;color:var(--jungle)}
 .pingate-card{background:#fff;border-radius:var(--radius);padding:28px 24px;max-width:320px;width:100%;text-align:center;box-shadow:var(--shadow-lg)}
 .pingate-title{font-family:'Secular One';font-size:22px;color:var(--jungle);margin-bottom:4px}
 .pingate-sub{font-size:14px;color:var(--muted);margin-bottom:16px}
-.pingate-card input{text-align:center;font-size:24px;letter-spacing:8px;margin-bottom:12px}
+.pingate-card input{text-align:center;font-size:17px;margin-bottom:12px}
 .pingate-error{color:var(--coral);font-size:13px;margin-top:10px;min-height:16px}
 body.locked{overflow:hidden}
 .syncbadge{font-size:12px;color:rgba(255,255,255,.75)}
@@ -168,8 +168,9 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
 <div class="pingate" id="pinGate">
   <div class="pingate-card">
     <div class="pingate-title">תאילנד 2026 🔒</div>
-    <div class="pingate-sub">הזינו קוד גישה</div>
-    <input type="tel" id="pinInput" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••">
+    <div class="pingate-sub">התחברו עם המשתמש שלכם</div>
+    <input type="email" id="loginEmail" autocomplete="username" placeholder="אימייל" dir="ltr">
+    <input type="password" id="pinInput" autocomplete="current-password" placeholder="סיסמה" dir="ltr">
     <button class="btn" id="pinSubmitBtn">כניסה</button>
     <div class="pingate-error" id="pinError"></div>
   </div>
@@ -405,7 +406,7 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
   </div>
 </section>
 
-<div class="footer-note">הנתונים נשמרים בדפדפן ומסתנכרנים בין המכשירים 📱☁️</div>
+<div class="footer-note">הנתונים נשמרים בדפדפן ומסתנכרנים בין המכשירים 📱☁️ · <a href="#" id="logoutLink">התנתקות</a></div>
 <div style="text-align:center;margin-top:10px">
   <button class="btn ghost small" id="exportBackupBtn">⬇️ גיבוי כל הנתונים לקובץ</button>
   <button class="btn ghost small" id="exportCloudBackupBtn">☁️ גיבוי מלא מהענן (כולל קבצים)</button>
@@ -441,7 +442,7 @@ const DEFAULT_HOTELS=[];const DEFAULT_FLIGHTS=[];const DEFAULT_CHECKS=[];
 
 function load(key,def){try{const v=localStorage.getItem(key);return v?JSON.parse(v):def}catch(e){return def}}
 function persistLocal(key,val){try{localStorage.setItem(key,JSON.stringify(val))}catch(e){}}
-function save(key,val){persistLocal(key,val);pushToCloud()}
+function save(key,val){persistLocal(key,val);markDirty(key);pushToCloud()}
 
 let hotels=load('th_hotels_v2',DEFAULT_HOTELS);
 let flights=load('th_flights_v2',DEFAULT_FLIGHTS);
@@ -455,6 +456,7 @@ let kidExps=load('th_kid_exps',[]);
 let weatherCache=load('th_weather_cache',{});
 let poiState=load('th_poi_state',{});
 
+/* שרתי הסנכרון הישנים: נשארו רק לקריאה (גיבוי וייבוא חד-פעמי ל-Supabase) */
 const SYNC_BACKENDS=[
   {url:'https://api.npoint.io/d51477288f3c722bd2f9',method:'POST'},
   {url:'https://extendsclass.com/api/json-storage/bin/baaeaeb',method:'PUT'}
@@ -489,68 +491,229 @@ document.addEventListener('focusout',e=>{
 });
 function setSyncOk(){const t=new Date();setSyncStatus('☁️ מסונכרן · '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0'),'ok')}
 function isEmptyVal(v){if(v==null)return true;if(Array.isArray(v))return v.length===0;if(typeof v==='object')return Object.keys(v).length===0;return false}
-function isSuspiciousShrink(cv,local){
-  /* מגן מפני מכשיר "מפגר" (שהיה אופליין / דפדפן שנוקה) שדוחף החוצה עותק קטן משלו
-     ומוחק בשקט נתונים של כולם. מחיקה אמיתית באפליקציה תמיד מסירה פריט אחד בכל פעם
-     (עם confirm()), אז ירידה של פריט אחד היא לגיטימית — ירידה של 2+ פריטים בבת אחת
-     היא סימן לאובדן נתונים, לא למחיקה מכוונת, ונדחית. */
-  return Array.isArray(cv)&&Array.isArray(local)&&cv.length<local.length-1;
+/* ================= סנכרון דרך Supabase =================
+   כל פריט (הוצאה, טיסה, מלון, משימה…) הוא שורה נפרדת בטבלה items, כך ששני
+   מכשירים שמוסיפים דברים באותו זמן לא דורסים זה את זה. מחיקה נשמרת כ"מצבה"
+   (deleted=true) ולא כהסרה, כדי שמכשיר שלא היה מחובר לא יחזיר את הפריט.
+   SB_URL ו-SB_KEY נלקחים מ-Project Settings → API ב-Supabase. המפתח הוא
+   ה-anon key הציבורי: הוא בטוח לפרסום, את הגישה מגבילים חוקי RLS שב-supabase/schema.sql. */
+const SB_URL='';
+const SB_KEY='';
+const SB_BUCKET='trip-files';
+const OBJ_KEYS=new Set(['th_rates','th_dayplans','th_poi_state']);
+let sbSession=load('th_sb_session',null);
+let synced=load('th_synced',{});    // מה שידוע שנמצא בשרת: {key:{id:json}}
+let pending=load('th_pending',{});  // פריטים שהשתנו כאן ועוד לא נשמרו בשרת: {key:{id:1}}
+let lastSeen=load('th_last_seen','');
+let syncReady=load('th_first_sync_done',false); // עד הסנכרון הראשון לא שולחים ולא מושכים
+
+function itemsOf(key,val){
+  const m={};
+  if(OBJ_KEYS.has(key))Object.keys(val||{}).forEach(k=>{m[k]=val[k]});
+  else (val||[]).forEach(it=>{if(it&&it.id!=null)m[String(it.id)]=it});
+  return m;
 }
-let lastSyncedJSON='';let pushTimer=null;
-function pushToCloud(){
-  clearTimeout(pushTimer);
-  pushTimer=setTimeout(()=>{
-    const json=JSON.stringify(buildCloudState());
-    Promise.allSettled(SYNC_BACKENDS.map(b=>fetch(b.url,{method:b.method,headers:{'Content-Type':'application/json'},body:json}).then(r=>{if(!r.ok)throw new Error('http '+r.status)})))
-      .then(rs=>{if(rs.some(r=>r.status==='fulfilled')){lastSyncedJSON=json;setSyncOk()}else setSyncStatus('⚠️ לא ניתן לסנכרן כרגע','warn')});
-  },600);
+function markDirty(key){
+  const cur=itemsOf(key,getLocalVar(key));const known=synced[key]||{};
+  const p=pending[key]||(pending[key]={});
+  Object.keys(cur).forEach(id=>{if(known[id]!==JSON.stringify(cur[id]))p[id]=1});
+  Object.keys(known).forEach(id=>{if(!(id in cur))p[id]=1});
+  persistLocal('th_pending',pending);
 }
-function applyCloud(data){
-  let changed=false,needPush=false,blocked=false;
-  CLOUD_KEYS.forEach(k=>{
-    const local=getLocalVar(k);const cv=data?data[k]:undefined;
-    if(cv!==undefined&&isSuspiciousShrink(cv,local)){
-      console.warn('⚠️ נחסם עדכון ענן חשוד עבור '+k+': ענן='+cv.length+' פריטים, מקומי='+local.length+' — דוחף בחזרה את הגרסה המקומית');
-      blocked=true;needPush=true;return;
-    }
-    if(cv!==undefined&&!(isEmptyVal(cv)&&!isEmptyVal(local))){
-      if(JSON.stringify(cv)!==JSON.stringify(local)){persistLocal(k,cv);setLocalVar(k,cv);changed=true}
-    }else if(!isEmptyVal(local)){needPush=true}
-  });
-  if(blocked)setSyncStatus('🛡️ נחסמה מחיקה חשודה בענן — משחזר','warn');
-  if(changed){safeRenderAll();setTimeout(cacheCloudFiles,1500)}
-  if(needPush)pushToCloud();
+function pushToCloud(){clearTimeout(pushTimer);pushTimer=setTimeout(flushPending,600)}
+let pushTimer=null;
+
+async function sbFetch(path,opts={},retry=true){
+  if(!sbSession)throw new Error('not signed in');
+  if(sbSession.expires_at&&sbSession.expires_at*1000<Date.now()+60000)await sbRefresh();
+  const headers=Object.assign({apikey:SB_KEY,Authorization:'Bearer '+sbSession.access_token},opts.headers||{});
+  const r=await fetch(SB_URL+path,Object.assign({},opts,{headers}));
+  if(r.status===401&&retry){await sbRefresh();return sbFetch(path,opts,false)}
+  if(!r.ok)throw new Error('http '+r.status);
+  return r;
 }
-let pollFails=0;let pollN=0;
-function pollCloud(force){
-  if(!force&&document.visibilityState!=='visible')return;
-  pollN++;_pollWith((force||pollN%6===0)?SYNC_BACKENDS:[SYNC_BACKENDS[0]]);
+async function sbAuth(grant,body){
+  const r=await fetch(SB_URL+'/auth/v1/token?grant_type='+grant,{method:'POST',headers:{apikey:SB_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok)throw new Error('auth '+r.status);
+  const s=await r.json();
+  sbSession={access_token:s.access_token,refresh_token:s.refresh_token,expires_at:s.expires_at||Math.floor(Date.now()/1000)+(s.expires_in||3600)};
+  persistLocal('th_sb_session',sbSession);
 }
-function _pollWith(backends){
-  Promise.allSettled(backends.map(b=>fetch(b.url).then(r=>{if(!r.ok)throw new Error('http '+r.status);return r.json()})))
-    .then(rs=>{
-      const datas=rs.map(r=>r.status==='fulfilled'?r.value:null);
-      if(datas.every(d=>!d)){
-        if(backends.length<SYNC_BACKENDS.length){_pollWith(SYNC_BACKENDS);return}
-        pollFails++;if(pollFails>=3)setSyncStatus('⚠️ לא מחובר לענן — בדקו חיבור אינטרנט','warn');
-        return;
-      }
-      pollFails=0;setSyncOk();
-      const merged={};
-      CLOUD_KEYS.forEach(k=>{
-        for(const d of datas){if(d&&d[k]!==undefined&&!isEmptyVal(d[k])){merged[k]=d[k];return}}
-        for(const d of datas){if(d&&d[k]!==undefined){merged[k]=d[k];return}}
-      });
-      const json=JSON.stringify(merged);
-      const outOfSync=datas.some(d=>!d||JSON.stringify(d)!==json);
-      if(json!==lastSyncedJSON){lastSyncedJSON=json;applyCloud(merged)}
-      if(outOfSync)pushToCloud();
+async function sbRefresh(){
+  try{await sbAuth('refresh_token',{refresh_token:sbSession.refresh_token})}
+  catch(e){if(/auth 4/.test(e.message)){signOutLocal();throw e}throw e}
+}
+function signOutLocal(){sbSession=null;try{localStorage.removeItem('th_sb_session')}catch(e){}showLogin()}
+
+let flushing=false;
+async function flushPending(){
+  if(flushing||!sbSession||!syncReady)return;
+  const rows=[];
+  Object.keys(pending).forEach(key=>{
+    const cur=itemsOf(key,getLocalVar(key));
+    Object.keys(pending[key]).forEach(id=>{
+      const has=id in cur;
+      rows.push({coll:key,id,data:has?cur[id]:null,deleted:!has});
     });
+  });
+  if(!rows.length)return;
+  flushing=true;
+  try{
+    await sbFetch('/rest/v1/items?on_conflict=coll,id',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows)});
+    rows.forEach(r=>{
+      const known=synced[r.coll]||(synced[r.coll]={});
+      const nowJson=r.deleted?undefined:JSON.stringify(itemsOf(r.coll,getLocalVar(r.coll))[r.id]);
+      const sentJson=r.deleted?undefined:JSON.stringify(r.data);
+      if(r.deleted)delete known[r.id];else known[r.id]=sentJson;
+      if(nowJson===sentJson&&pending[r.coll])delete pending[r.coll][r.id]; // השתנה שוב בזמן השליחה? נשאר ממתין
+    });
+    persistLocal('th_synced',synced);persistLocal('th_pending',pending);
+    setSyncOk();
+  }catch(e){setSyncStatus('⚠️ לא נשמר בענן — ננסה שוב','warn')}
+  finally{flushing=false}
+  if(hasPending())pushToCloud();
 }
-setSyncStatus('🔄 מתחבר…','');
-pollCloud(true);
-setInterval(()=>pollCloud(),10000);
+function hasPending(){return Object.values(pending).some(p=>Object.keys(p).length)}
+
+function applyRows(rows){
+  const touched=new Set();
+  rows.forEach(r=>{
+    if(!CLOUD_KEYS.includes(r.coll))return;
+    if(r.updated_at&&r.updated_at>lastSeen)lastSeen=r.updated_at;
+    if(pending[r.coll]&&pending[r.coll][r.id])return; // השינוי המקומי עוד בדרך — הוא ינצח
+    const known=synced[r.coll]||(synced[r.coll]={});
+    const json=r.deleted?undefined:JSON.stringify(r.data);
+    if(known[r.id]===json)return;
+    if(r.deleted)delete known[r.id];else known[r.id]=json;
+    const val=getLocalVar(r.coll);
+    if(OBJ_KEYS.has(r.coll)){
+      const o=Object.assign({},val||{});
+      if(r.deleted)delete o[r.id];else o[r.id]=r.data;
+      setLocalVar(r.coll,o);
+    }else{
+      const arr=(val||[]).filter(it=>String(it.id)!==r.id);
+      if(!r.deleted){const i=(val||[]).findIndex(it=>String(it.id)===r.id);arr.splice(i<0?arr.length:i,0,r.data)}
+      setLocalVar(r.coll,arr);
+    }
+    touched.add(r.coll);
+  });
+  touched.forEach(k=>persistLocal(k,getLocalVar(k)));
+  persistLocal('th_synced',synced);persistLocal('th_last_seen',lastSeen);
+  if(touched.size)safeRenderAll();
+}
+
+async function fetchRows(since){
+  const out=[];let from=0;const page=1000;
+  for(;;){
+    let q='/rest/v1/items?select=coll,id,data,deleted,updated_at&order=updated_at.asc,coll.asc,id.asc';
+    if(since)q+='&updated_at=gt.'+encodeURIComponent(since);
+    const r=await sbFetch(q,{headers:{Range:from+'-'+(from+page-1)}});
+    const rows=await r.json();out.push(...rows);
+    if(rows.length<page)return out;
+    from+=page;
+  }
+}
+let pollFails=0;
+async function pollCloud(force){
+  if(!sbSession||!syncReady)return;
+  if(!force&&document.visibilityState!=='visible')return;
+  try{
+    // חפיפה של 10 שניות אחורה: שורה שנכתבה ממש לפני הבדיקה הקודמת לא תפוספס
+    const since=lastSeen?new Date(new Date(lastSeen).getTime()-10000).toISOString():'';
+    applyRows(await fetchRows(since));
+    pollFails=0;setSyncOk();
+  }catch(e){
+    if(!sbSession)return;
+    pollFails++;if(pollFails>=3)setSyncStatus('⚠️ לא מחובר לענן — בדקו חיבור אינטרנט','warn');
+  }
+  if(hasPending())flushPending();
+}
+
+/* כניסה ראשונה (בכל מכשיר): מה שקיים בשרת קובע. פריטים שיש רק במכשיר הזה
+   נשלחים לשרת, כדי לא לאבד שום דבר שנרשם בזמן הטיול. אם השרת ריק לגמרי,
+   מאחדים גם את מה שנשאר בשרתי הסנכרון הישנים (npoint / extendsclass). */
+async function firstSync(){
+  const rows=await fetchRows('');
+  if(!rows.length){
+    const legacy=await Promise.all(SYNC_BACKENDS.map(b=>fetch(b.url).then(r=>r.ok?r.json():null).catch(()=>null)));
+    legacy.filter(Boolean).forEach(d=>CLOUD_KEYS.forEach(k=>{
+      if(d[k]===undefined)return;
+      const mine=getLocalVar(k);
+      if(OBJ_KEYS.has(k))setLocalVar(k,Object.assign({},d[k]||{},mine||{}));
+      else{const ids=new Set((mine||[]).map(it=>String(it.id)));setLocalVar(k,[...(mine||[]),...(d[k]||[]).filter(it=>it&&!ids.has(String(it.id)))])}
+      persistLocal(k,getLocalVar(k));
+    }));
+  }
+  const local={};CLOUD_KEYS.forEach(k=>{local[k]=itemsOf(k,getLocalVar(k))});
+  synced={};pending={};
+  applyRows(rows.map(r=>Object.assign({},r)));
+  CLOUD_KEYS.forEach(k=>{
+    const onServer=new Set(rows.filter(r=>r.coll===k).map(r=>r.id));
+    const p={};Object.keys(local[k]).forEach(id=>{if(!onServer.has(id))p[id]=1});
+    if(Object.keys(p).length){
+      pending[k]=p;
+      // שורות מהשרת הוחלו מעל המקומי; מחזירים את הפריטים שקיימים רק כאן
+      const val=getLocalVar(k);
+      if(OBJ_KEYS.has(k)){const o=Object.assign({},val);Object.keys(p).forEach(id=>{o[id]=local[k][id]});setLocalVar(k,o)}
+      else setLocalVar(k,[...val.filter(it=>!(String(it.id) in p)),...Object.keys(p).map(id=>local[k][id])]);
+      persistLocal(k,getLocalVar(k));
+    }
+  });
+  persistLocal('th_pending',pending);persistLocal('th_first_sync_done',true);syncReady=true;
+  renderAll();
+  await flushPending();
+}
+
+/* קבצים מצורפים: Supabase Storage, ומורידים קובץ רק כשפותחים אותו */
+function storagePath(itemKey,entryId,name){const ext=(String(name).match(/\.[A-Za-z0-9]{1,8}$/)||[''])[0];return itemKey+'/'+entryId+ext.toLowerCase()}
+async function sbUpload(path,blob,type){
+  await sbFetch('/storage/v1/object/'+SB_BUCKET+'/'+path,{method:'POST',headers:{'Content-Type':type||'application/octet-stream','x-upsert':'true'},body:blob});
+}
+async function sbDownload(path){return (await sbFetch('/storage/v1/object/authenticated/'+SB_BUCKET+'/'+path)).blob()}
+function sbRemove(path){return sbFetch('/storage/v1/object/'+SB_BUCKET+'/'+path,{method:'DELETE'}).catch(()=>{})}
+let legacyRan=false;
+async function migrateLegacyBins(){
+  if(legacyRan)return;legacyRan=true;
+  const kinds=[['hotel',()=>hotels],['flight',()=>flights],['car',()=>cars]];
+  for(const [kind,arr] of kinds){
+    for(const it of arr()){
+      for(const e of (it.files||[])){
+        if(!e.bin||e.path)continue;
+        try{
+          const r=await fetch(e.bin);if(!r.ok)continue;
+          const j=await r.json();if(!j||!j.data)continue;
+          const key=kind+'_'+it.id;const path=storagePath(key,e.id,e.name);
+          await sbUpload(path,b64ToBlob(j.data,j.type||e.type),j.type||e.type);
+          e.path=path;delete e.bin;saveItemArr(key);
+        }catch(err){}
+      }
+    }
+  }
+}
+
+/* מסך כניסה במקום ה-PIN: כל נוסע מקבל משתמש ב-Supabase */
+function showLogin(){document.getElementById('pinGate').classList.remove('hidden');document.body.classList.add('locked')}
+function hideLogin(){document.getElementById('pinGate').classList.add('hidden');document.body.classList.remove('locked')}
+async function checkPin(){
+  const email=document.getElementById('loginEmail').value.trim();
+  const pass=document.getElementById('pinInput').value;
+  const err=document.getElementById('pinError');
+  if(!SB_URL||!SB_KEY){err.textContent='האתר עוד לא חובר ל-Supabase';return}
+  err.textContent='';
+  try{await sbAuth('password',{email,password:pass})}
+  catch(e){err.textContent=/auth 4/.test(e.message)?'אימייל או סיסמה שגויים':'אין חיבור, נסו שוב';return}
+  document.getElementById('pinInput').value='';
+  hideLogin();startSync();
+}
+async function startSync(){
+  setSyncStatus('🔄 מתחבר…','');
+  try{if(!syncReady)await firstSync();else await pollCloud(true)}
+  catch(e){if(sbSession)setSyncStatus('⚠️ לא מחובר לענן — בדקו חיבור אינטרנט','warn');return}
+  migrateLegacyBins();migrateLocalFiles();
+}
+setInterval(()=>pollCloud(),5000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollCloud()});
+window.addEventListener('online',()=>{pollCloud(true)});
 
 let toastTimer=null;
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1800)}
@@ -1207,8 +1370,6 @@ function compressImage(f){return new Promise(res=>{
   img.onerror=()=>{URL.revokeObjectURL(img.src);res(f)};
   img.src=URL.createObjectURL(f);
 })}
-function usedBins(){const s=new Set();[...hotels,...flights,...cars].forEach(it=>(it.files||[]).forEach(f=>f.bin&&s.add(f.bin)));return s}
-function freeBin(){const u=usedBins();const free=FILE_POOL.filter(b=>!u.has(b));return free.length?free[Math.floor(Math.random()*free.length)]:null}
 let attTarget=null;
 function attAddFile(itemKey){attTarget=itemKey;document.getElementById('attFileInput').click()}
 document.getElementById('attFileInput').addEventListener('change',async e=>{
@@ -1221,17 +1382,12 @@ document.getElementById('attFileInput').addEventListener('change',async e=>{
   await filesDBReady;
   try{
     f=await compressImage(f);
-    if(f.size>3*1024*1024){alert('הקובץ גדול מדי לענן (עד 3MB). אפשר להוסיף אותו כקישור מ-Google Drive במקום.');renderAttachments(itemKey);return}
-    const it=findItem(itemKey);const bin=freeBin();
-    if(!it||!bin){
-      if(!bin)alert('מאגר הקבצים בענן מלא — הקובץ יישמר במכשיר הזה בלבד');
-      await idbPut({fid:itemKey+'_'+Date.now(),itemKey,name:f.name,type:f.type,blob:f,added:Date.now()});
-      renderAttachments(itemKey);return;
-    }
-    const b64=await fileToB64(f);
-    const r=await fetch(bin,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:f.name,type:f.type||'application/octet-stream',data:b64})});
-    if(!r.ok)throw new Error('http '+r.status);
-    const entry={id:Date.now(),name:f.name,type:f.type||'',size:f.size,bin};
+    if(f.size>20*1024*1024){alert('הקובץ גדול מדי לענן (עד 20MB). אפשר להוסיף אותו כקישור מ-Google Drive במקום.');renderAttachments(itemKey);return}
+    const it=findItem(itemKey);
+    if(!it){renderAttachments(itemKey);return}
+    const id=Date.now();const path=storagePath(itemKey,id,f.name);
+    await sbUpload(path,f,f.type);
+    const entry={id,name:f.name,type:f.type||'',size:f.size,path};
     if(!it.files)it.files=[];it.files.push(entry);
     await idbPut({fid:'c_'+entry.id,itemKey,name:f.name,type:entry.type,blob:f,added:Date.now()});
     saveItemArr(itemKey);
@@ -1279,9 +1435,14 @@ async function attOpenCloud(itemKey,fileId){
   let rec=await idbGet('c_'+fileId);
   if(!rec||!rec.blob){
     try{
-      const r=await fetch(entry.bin);if(!r.ok)throw new Error('http '+r.status);
-      const j=await r.json();if(!j||!j.data)throw new Error('empty');
-      rec={name:entry.name,blob:b64ToBlob(j.data,j.type||entry.type)};
+      let blob;
+      if(entry.path)blob=await sbDownload(entry.path);
+      else{
+        const r=await fetch(entry.bin);if(!r.ok)throw new Error('http '+r.status);
+        const j=await r.json();if(!j||!j.data)throw new Error('empty');
+        blob=b64ToBlob(j.data,j.type||entry.type);
+      }
+      rec={name:entry.name,blob};
       await idbPut({fid:'c_'+fileId,itemKey,name:entry.name,type:entry.type,blob:rec.blob,added:Date.now()});
     }catch(err){alert('לא הצלחנו להוריד את הקובץ מהענן — בדקו אינטרנט ונסו שוב');return}
   }
@@ -1293,7 +1454,7 @@ async function attDelCloud(itemKey,fileId){
   const entry=(it.files||[]).find(x=>x.id===fileId);
   it.files=(it.files||[]).filter(x=>x.id!==fileId);
   saveItemArr(itemKey);await idbDel('c_'+fileId);
-  if(entry&&entry.bin){fetch(entry.bin,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).catch(()=>{})}
+  if(entry&&entry.path)sbRemove(entry.path);
   renderAttachments(itemKey);
 }
 async function attOpen(fid){
@@ -1304,44 +1465,23 @@ async function attOpen(fid){
 async function attDelFile(fid,itemKey){if(!confirm('למחוק את הקובץ?'))return;await idbDel(fid);renderAttachments(itemKey)}
 let migrateRan=false;
 async function migrateLocalFiles(){
-  if(migrateRan)return;migrateRan=true;await filesDBReady;
+  if(migrateRan||!sbSession||!syncReady)return;migrateRan=true;await filesDBReady;
   const all=await idbAll();let moved=0;
   for(const rec of all){
     if(rec.fid.indexOf('c_')===0)continue;
     const it=findItem(rec.itemKey);if(!it)continue;
     const full=await idbGet(rec.fid);if(!full||!full.blob)continue;
-    if(full.blob.size>3*1024*1024)continue;
-    const bin=freeBin();if(!bin)break;
+    if(full.blob.size>20*1024*1024)continue;
     try{
-      const b64=await fileToB64(full.blob);
-      const r=await fetch(bin,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:rec.name,type:full.type||'application/octet-stream',data:b64})});
-      if(!r.ok)continue;
-      const entry={id:Date.now()+moved,name:rec.name,type:full.type||'',size:full.blob.size,bin};
+      const id=Date.now()+moved;const path=storagePath(rec.itemKey,id,rec.name);
+      await sbUpload(path,full.blob,full.type);
+      const entry={id,name:rec.name,type:full.type||'',size:full.blob.size,path};
       if(!it.files)it.files=[];it.files.push(entry);
       await idbPut({fid:'c_'+entry.id,itemKey:rec.itemKey,name:rec.name,type:entry.type,blob:full.blob,added:Date.now()});
       await idbDel(rec.fid);saveItemArr(rec.itemKey);moved++;
     }catch(err){}
   }
   if(moved)renderAttachments();
-}
-let cachingRun=false;
-async function cacheCloudFiles(){
-  if(cachingRun)return;cachingRun=true;let got=0;
-  try{
-    await filesDBReady;if(!filesDB)return;
-    const items=[...hotels.map(h=>({key:'hotel_'+h.id,it:h})),...flights.map(f=>({key:'flight_'+f.id,it:f})),...cars.map(c=>({key:'car_'+c.id,it:c}))];
-    for(const {key,it} of items){
-      for(const e of (it.files||[])){
-        if(await idbGet('c_'+e.id))continue;
-        try{
-          const r=await fetch(e.bin);if(!r.ok)continue;
-          const j=await r.json();if(!j||!j.data)continue;
-          await idbPut({fid:'c_'+e.id,itemKey:key,name:e.name,type:e.type,blob:b64ToBlob(j.data,j.type||e.type),added:Date.now()});got++;
-        }catch(err){}
-      }
-    }
-  }finally{cachingRun=false}
-  if(got)renderAttachments();
 }
 function attAddLink(itemKey){
   let url=prompt('הדביקו קישור (למשל מ-Google Drive או ממייל האישור):');
@@ -1455,23 +1595,14 @@ function guardAllButtonHandlers(){
   });
 }
 
-function renderAll(){renderStrip();renderPlan();renderFlights();renderHotels();renderCars();renderMoney();renderKids();renderChecks();renderCountdown();renderAttachments();renderPOI()}
-
-const APP_PIN='1971';
-function checkPin(){
-  const val=document.getElementById('pinInput').value.trim();
-  if(val===APP_PIN){
-    localStorage.setItem('th_unlocked','1');
-    document.getElementById('pinGate').classList.add('hidden');
-    document.body.classList.remove('locked');
-  }else{
-    document.getElementById('pinError').textContent='קוד שגוי, נסו שוב';
-    document.getElementById('pinInput').value='';
-  }
+function renderAll(){
+  /* כל חלק מצויר בנפרד: פריט פגום אחד לא מפיל את כל הדף */
+  [renderStrip,renderPlan,renderFlights,renderHotels,renderCars,renderMoney,renderKids,renderChecks,renderCountdown,renderAttachments,renderPOI]
+    .forEach(fn=>{try{const r=fn();if(r&&r.catch)r.catch(e=>console.error('שגיאה בציור '+fn.name+':',e))}catch(e){console.error('שגיאה בציור '+fn.name+':',e)}});
 }
+
 document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='Enter')checkPin()});
-if(localStorage.getItem('th_unlocked')==='1'){document.getElementById('pinGate').classList.add('hidden')}
-else{document.body.classList.add('locked')}
+if(sbSession){hideLogin()}else{showLogin()}
 
 const _exportNames=['checkPin','go','toggleAllDays','goToDay','addFlight','delFlight','addHotel','delHotel','addCar','delCar',
   'addExp','addWd','delWd','editWdStart','editWdCancel','editWdSave','delExp','editExpStart','editExpCancel','editExpSave',
@@ -1487,6 +1618,7 @@ _exportNames.forEach(n=>{try{window[n]=eval(n)}catch(e){}});
 guardAllButtonHandlers();
 
 document.getElementById('pinSubmitBtn').addEventListener('click',checkPin);
+document.getElementById('logoutLink').addEventListener('click',e=>{e.preventDefault();signOutLocal()});
 document.getElementById('shareBtn').addEventListener('click',shareTrip);
 document.getElementById('openAllBtn').addEventListener('click',()=>toggleAllDays(true));
 document.getElementById('closeAllBtn').addEventListener('click',()=>toggleAllDays(false));
@@ -1507,7 +1639,7 @@ renderAll();
 guardAllButtonHandlers(); // מריצים שוב אחרי renderAll — מכסה גם כפתורים שנוצרו דינמית בכרטיסים
 window.addEventListener('error',e=>{console.error('שגיאה כללית:',e.error||e.message)});
 setTimeout(migrateLocalFiles,5000);
-setTimeout(cacheCloudFiles,9000);
+if(sbSession)startSync();
 ensureWeather();
 </script>
 </body>
