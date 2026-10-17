@@ -408,6 +408,7 @@ nav button.active{color:var(--emerald);background:var(--emerald-soft)}
 <div class="footer-note">הנתונים נשמרים בדפדפן ומסתנכרנים בין המכשירים 📱☁️</div>
 <div style="text-align:center;margin-top:10px">
   <button class="btn ghost small" id="exportBackupBtn">⬇️ גיבוי כל הנתונים לקובץ</button>
+  <button class="btn ghost small" id="exportCloudBackupBtn">☁️ גיבוי מלא מהענן (כולל קבצים)</button>
 </div>
 </main>
 
@@ -1411,6 +1412,28 @@ function exportBackup(){
   document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(u),5000);
 }
+/* גיבוי מלא לקריאה בלבד: מוריד את מה ששמור בענן (שני שרתי הסנכרון + כל ה-bins
+   של הקבצים) יחד עם העותק המקומי, לקובץ אחד. לא כותב כלום לענן. */
+async function exportCloudBackup(){
+  const btn=document.getElementById('exportCloudBackupBtn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ מוריד גיבוי מהענן…'}
+  const get=async url=>{try{const r=await fetch(url,{cache:'no-store'});if(!r.ok)return {url,error:'http '+r.status};return {url,data:await r.json()}}catch(e){return {url,error:String(e)}}};
+  try{
+    const backends=await Promise.all(SYNC_BACKENDS.map(b=>get(b.url)));
+    const files=[];
+    for(const url of FILE_POOL){const res=await get(url);if(res.error||(res.data&&res.data.data))files.push(res)}
+    const out={createdAt:new Date().toISOString(),local:buildCloudState(),backends,files};
+    const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+    const u=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=u;a.download='thailand-trip-cloud-backup-'+localDateStr()+'.json';
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(u),5000);
+    const ok=backends.filter(b=>!b.error).length;
+    showToast('הגיבוי ירד · '+ok+'/'+backends.length+' שרתים · '+files.filter(f=>!f.error).length+' קבצים');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='☁️ גיבוי מלא מהענן (כולל קבצים)'}
+  }
+}
 function guardAllButtonHandlers(){
   /* מגן על כל הפעולות שכפתור יכול להפעיל — הן אלה שמצוירות דינמית עם
      onclick="..." (בכרטיסים) והן הכפתורים הקבועים שמחוברים ב-addEventListener
@@ -1453,7 +1476,7 @@ else{document.body.classList.add('locked')}
 const _exportNames=['checkPin','go','toggleAllDays','goToDay','addFlight','delFlight','addHotel','delHotel','addCar','delCar',
   'addExp','addWd','delWd','editWdStart','editWdCancel','editWdSave','delExp','editExpStart','editExpCancel','editExpSave',
   'addKidExp','delKidExp','editKidStart','editKidCancel','editKidSave','addChk','togChk','delChk',
-  'attAddFile','attAddLink','attDelLink','attDelCloud','attOpenCloud','attOpen','attDelFile','exportBackup','saveDayPlanField','shareTrip','poiMark'];
+  'attAddFile','attAddLink','attDelLink','attDelCloud','attOpenCloud','attOpen','attDelFile','exportBackup','exportCloudBackup','saveDayPlanField','shareTrip','poiMark'];
 _exportNames.forEach(n=>{try{window[n]=eval(n)}catch(e){}});
 
 /* חשוב: מפעילים את ה"מגן" (guardAllButtonHandlers) *לפני* שכפתורים קבועים
@@ -1475,6 +1498,7 @@ document.getElementById('addWdBtn').addEventListener('click',addWd);
 document.getElementById('addKidExpBtn').addEventListener('click',addKidExp);
 document.getElementById('addChkBtn').addEventListener('click',addChk);
 document.getElementById('exportBackupBtn').addEventListener('click',exportBackup);
+document.getElementById('exportCloudBackupBtn').addEventListener('click',exportCloudBackup);
 document.querySelectorAll('nav button[data-tab]').forEach(btn=>{
   btn.addEventListener('click',()=>go(btn.dataset.tab,btn));
 });
